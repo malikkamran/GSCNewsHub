@@ -101,9 +101,7 @@ export default function ArticlesPage() {
   // Handle deleting an article
   const handleDelete = async (id: number) => {
     try {
-      await apiRequest(`/api/articles/${id}`, {
-        method: "DELETE",
-      });
+      await apiRequest("DELETE", `/api/articles/${id}`);
       
       toast({
         title: "Article deleted",
