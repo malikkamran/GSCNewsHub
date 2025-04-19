@@ -131,6 +131,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </div>
               <span className="font-medium hidden sm:inline-block">Admin</span>
             </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => window.location.href = "/"}
+              className="ml-4 text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline-block">View Site</span>
+            </Button>
           </div>
 
           <div className="flex items-center space-x-2">
