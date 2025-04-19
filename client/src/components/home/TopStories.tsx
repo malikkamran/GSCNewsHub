@@ -67,9 +67,9 @@ export default function TopStories() {
   return (
     <section className="mb-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Main large article (2/3 width on desktop) */}
+        {/* Main large article (takes ~1/2 width on desktop) */}
         {mainArticle && (
-          <div className="md:col-span-3 lg:col-span-2">
+          <div className="md:col-span-2">
             <Link href={`/article/${mainArticle.slug}`}>
               <div className="relative overflow-hidden rounded group cursor-pointer h-[300px] md:h-[400px]">
                 {/* Background image */}
@@ -106,40 +106,69 @@ export default function TopStories() {
           </div>
         )}
         
-        {/* Secondary articles (vertical stack, 1/3 width on desktop) */}
-        <div className="md:col-span-3 lg:col-span-1">
-          <div className="grid grid-cols-1 gap-4">
-            {secondaryArticles.map((article) => (
-              <Link key={article.id} href={`/article/${article.slug}`}>
-                <div className="relative overflow-hidden rounded group cursor-pointer h-[200px]">
-                  {/* Background image */}
-                  <img 
-                    src={article.imageUrl} 
-                    alt={article.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+        {/* Secondary articles (display horizontally, ~1/2 width together on desktop) */}
+        <div className="md:col-span-1">
+          {secondaryArticles.length > 0 && (
+            <Link href={`/article/${secondaryArticles[0].slug}`}>
+              <div className="relative overflow-hidden rounded group cursor-pointer h-[200px] mb-4">
+                {/* Background image */}
+                <img 
+                  src={secondaryArticles[0].imageUrl} 
+                  alt={secondaryArticles[0].title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                
+                {/* Overlay content */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4">
+                  {/* Category tag */}
+                  <div className="bg-[#BB1919] text-white text-xs font-bold px-2 py-1 uppercase self-start mb-2">
+                    {getCategoryName(secondaryArticles[0].categoryId)}
+                  </div>
                   
-                  {/* Overlay content */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4">
-                    {/* Category tag */}
-                    <div className="bg-[#BB1919] text-white text-xs font-bold px-2 py-1 uppercase self-start mb-2">
-                      {getCategoryName(article.categoryId)}
-                    </div>
-                    
-                    {/* Title */}
-                    <h3 className="text-white text-lg font-bold mb-1 leading-tight">
-                      {article.title}
-                    </h3>
-                    
-                    {/* Date */}
-                    <div className="text-white/70 text-xs">
-                      {formatDate(article.publishedAt)}
-                    </div>
+                  {/* Title */}
+                  <h3 className="text-white text-lg font-bold mb-1 leading-tight">
+                    {secondaryArticles[0].title}
+                  </h3>
+                  
+                  {/* Date */}
+                  <div className="text-white/70 text-xs">
+                    {formatDate(secondaryArticles[0].publishedAt)}
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
+              </div>
+            </Link>
+          )}
+          
+          {secondaryArticles.length > 1 && (
+            <Link href={`/article/${secondaryArticles[1].slug}`}>
+              <div className="relative overflow-hidden rounded group cursor-pointer h-[200px]">
+                {/* Background image */}
+                <img 
+                  src={secondaryArticles[1].imageUrl} 
+                  alt={secondaryArticles[1].title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                
+                {/* Overlay content */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4">
+                  {/* Category tag */}
+                  <div className="bg-[#BB1919] text-white text-xs font-bold px-2 py-1 uppercase self-start mb-2">
+                    {getCategoryName(secondaryArticles[1].categoryId)}
+                  </div>
+                  
+                  {/* Title */}
+                  <h3 className="text-white text-lg font-bold mb-1 leading-tight">
+                    {secondaryArticles[1].title}
+                  </h3>
+                  
+                  {/* Date */}
+                  <div className="text-white/70 text-xs">
+                    {formatDate(secondaryArticles[1].publishedAt)}
+                  </div>
+                </div>
+              </div>
+            </Link>
+          )}
         </div>
       </div>
     </section>

@@ -6,7 +6,6 @@ import LatestNews from "@/components/home/LatestNews";
 import CategorySection from "@/components/home/CategorySection";
 import MostRead from "@/components/sidebar/MostRead";
 import FeaturedVideo from "@/components/sidebar/FeaturedVideo";
-import ExpertAnalysis from "@/components/sidebar/ExpertAnalysis";
 
 export default function Home() {
   const breadcrumbItems = [
@@ -33,10 +32,12 @@ export default function Home() {
           <h2 className="text-white text-xl font-bold py-2 px-3 font-roboto">TOP NEWS</h2>
         </div>
         
+        {/* TopStories with full width */}
+        <TopStories />
+        
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
           <div className="lg:w-2/3">
-            <TopStories />
             <LatestNews />
             
             {/* In-content Ad */}
@@ -66,8 +67,6 @@ export default function Home() {
               <div className="text-xs text-gray-500 mb-1">ADVERTISEMENT</div>
               <AdBanner slot="sidebar-middle" format="rectangle" className="border border-gray-200" />
             </div>
-            
-            <ExpertAnalysis />
           </div>
         </div>
       </main>
