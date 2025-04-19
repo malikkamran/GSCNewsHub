@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertArticleSchema, insertCategorySchema, insertUserSchema, insertAnalystSchema, insertAnalysisSchema, insertVideoSchema } from "@shared/schema";
+import { insertArticleSchema, insertCategorySchema, insertUserSchema, insertAnalystSchema, insertAnalysisSchema, insertVideoSchema, insertUserPreferencesSchema } from "@shared/schema";
 
 // Authentication state
 let isLoggedIn = false;
@@ -55,6 +55,226 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     return res.json({ authenticated: false });
+  });
+  
+  // User Registration
+  app.post("/api/users/register", async (req: Request, res: Response) => {
+    try {
+      // Validate request data
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Check if username already exists
+      const existingUsername = await storage.getUserByUsername(userData.username);
+      if (existingUsername) {
+        return res.status(400).json({ success: false, message: "Username already taken" });
+      }
+      
+      // Check if email already exists
+      const existingEmail = await storage.getUserByEmail(userData.email);
+      if (existingEmail) {
+        return res.status(400).json({ success: false, message: "Email already registered" });
+      }
+      
+      // Create user
+      const user = await storage.createUser(userData);
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      
+      // Set the user as logged in
+      isLoggedIn = true;
+      currentUser = userWithoutPassword;
+      
+      res.status(201).json({ success: true, user: userWithoutPassword });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, message: "Invalid user data", errors: error.errors });
+      }
+      res.status(500).json({ success: false, message: "Failed to register user" });
+    }
+  });
+  
+  // User Profile
+  app.get("/api/users/profile", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!currentUser) {
+        return res.status(401).json({ success: false, message: "Not authenticated" });
+      }
+      
+      const user = await storage.getUser(currentUser.id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      
+      res.json({ success: true, user: userWithoutPassword });
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Failed to fetch user profile" });
+    }
+  });
+  
+  // Update User Profile
+  app.put("/api/users/profile", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!currentUser) {
+        return res.status(401).json({ success: false, message: "Not authenticated" });
+      }
+      
+      // Validate request data
+      const updateData = req.body;
+      
+      // Don't allow updating username through this endpoint
+      delete updateData.username;
+      
+      // Don't allow changing role through this endpoint
+      delete updateData.role;
+      
+      // Update user
+      const updatedUser = await storage.updateUser(currentUser.id, updateData);
+      if (!updatedUser) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      // Update current user
+      currentUser = userWithoutPassword;
+      
+      res.json({ success: true, user: userWithoutPassword });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, message: "Invalid user data", errors: error.errors });
+      }
+      res.status(500).json({ success: false, message: "Failed to update user profile" });
+    }
+  });
+  
+  // User Preferences
+  app.get("/api/user-preferences", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!currentUser) {
+        return res.status(401).json({ success: false, message: "Not authenticated" });
+      }
+      
+      const preferences = await storage.getUserPreferences(currentUser.id);
+      res.json({ success: true, preferences });
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Failed to fetch user preferences" });
+    }
+  });
+  
+  app.post("/api/user-preferences", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!currentUser) {
+        return res.status(401).json({ success: false, message: "Not authenticated" });
+      }
+      
+      // Validate request data
+      const preferenceData = insertUserPreferencesSchema.parse({
+        ...req.body,
+        userId: currentUser.id
+      });
+      
+      // Check if preference already exists for this category
+      if (preferenceData.categoryId) {
+        const existingPreference = await storage.getUserPreferencesByCategory(
+          currentUser.id, 
+          preferenceData.categoryId
+        );
+        
+        if (existingPreference) {
+          return res.status(400).json({ 
+            success: false, 
+            message: "Preference for this category already exists" 
+          });
+        }
+      }
+      
+      // Create preference
+      const preference = await storage.createUserPreference(preferenceData);
+      res.status(201).json({ success: true, preference });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid preference data", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ success: false, message: "Failed to create user preference" });
+    }
+  });
+  
+  app.put("/api/user-preferences/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!currentUser) {
+        return res.status(401).json({ success: false, message: "Not authenticated" });
+      }
+      
+      const preferenceId = parseInt(req.params.id);
+      if (isNaN(preferenceId)) {
+        return res.status(400).json({ success: false, message: "Invalid preference ID" });
+      }
+      
+      // Update preference
+      const updatedPreference = await storage.updateUserPreference(preferenceId, req.body);
+      if (!updatedPreference) {
+        return res.status(404).json({ success: false, message: "Preference not found" });
+      }
+      
+      // Check if this preference belongs to the current user
+      if (updatedPreference.userId !== currentUser.id) {
+        return res.status(403).json({ success: false, message: "Forbidden" });
+      }
+      
+      res.json({ success: true, preference: updatedPreference });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid preference data", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ success: false, message: "Failed to update user preference" });
+    }
+  });
+  
+  app.delete("/api/user-preferences/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!currentUser) {
+        return res.status(401).json({ success: false, message: "Not authenticated" });
+      }
+      
+      const preferenceId = parseInt(req.params.id);
+      if (isNaN(preferenceId)) {
+        return res.status(400).json({ success: false, message: "Invalid preference ID" });
+      }
+      
+      // Get the preference to check ownership
+      const preference = await storage.updateUserPreference(preferenceId, {});
+      if (!preference) {
+        return res.status(404).json({ success: false, message: "Preference not found" });
+      }
+      
+      // Check if this preference belongs to the current user
+      if (preference.userId !== currentUser.id) {
+        return res.status(403).json({ success: false, message: "Forbidden" });
+      }
+      
+      // Delete preference
+      const result = await storage.deleteUserPreference(preferenceId);
+      if (!result) {
+        return res.status(404).json({ success: false, message: "Preference not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Failed to delete user preference" });
+    }
   });
   
   // prefix all routes with /api

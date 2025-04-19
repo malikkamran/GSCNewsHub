@@ -93,7 +93,9 @@ export class MemStorage implements IStorage {
     // Create default admin user
     this.createUser({
       username: "admin",
-      password: "admin123"
+      password: "admin123",
+      email: "admin@gscsupplychainnews.com",
+      role: "admin"
     });
     
     // Create categories matching our navigation menu
@@ -399,12 +401,84 @@ export class MemStorage implements IStorage {
       (user) => user.username === username,
     );
   }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      firstName: insertUser.firstName || null,
+      lastName: insertUser.lastName || null,
+      role: insertUser.role || 'user',
+      createdAt: new Date(),
+      lastLogin: null
+    };
     this.users.set(id, user);
     return user;
+  }
+  
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const existingUser = await this.getUser(id);
+    if (!existingUser) return undefined;
+    
+    const updatedUser: User = { 
+      ...existingUser, 
+      ...userData 
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  // User Preferences operations
+  async getUserPreferences(userId: number): Promise<UserPreferences[]> {
+    return Array.from(this.userPreferences.values()).filter(
+      (pref) => pref.userId === userId
+    );
+  }
+  
+  async getUserPreferencesByCategory(userId: number, categoryId: number): Promise<UserPreferences | undefined> {
+    return Array.from(this.userPreferences.values()).find(
+      (pref) => pref.userId === userId && pref.categoryId === categoryId
+    );
+  }
+  
+  async createUserPreference(preference: InsertUserPreferences): Promise<UserPreferences> {
+    const id = this.userPreferenceId++;
+    const newPreference: UserPreferences = { 
+      ...preference, 
+      id,
+      categoryId: preference.categoryId || null,
+      notificationsEnabled: preference.notificationsEnabled || false,
+      emailDigest: preference.emailDigest || false,
+      digestFrequency: preference.digestFrequency || null,
+      theme: preference.theme || null
+    };
+    this.userPreferences.set(id, newPreference);
+    return newPreference;
+  }
+  
+  async updateUserPreference(id: number, preference: Partial<InsertUserPreferences>): Promise<UserPreferences | undefined> {
+    const existingPreference = this.userPreferences.get(id);
+    if (!existingPreference) return undefined;
+    
+    const updatedPreference: UserPreferences = {
+      ...existingPreference,
+      ...preference
+    };
+    
+    this.userPreferences.set(id, updatedPreference);
+    return updatedPreference;
+  }
+  
+  async deleteUserPreference(id: number): Promise<boolean> {
+    return this.userPreferences.delete(id);
   }
 
   // Category operations
