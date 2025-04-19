@@ -26,15 +26,15 @@ export default function ArticleCard({
   // Container styling
   let containerClass = "border-b pb-4 border-[#DDDDDD]";
   
-  // Title styling based on size
-  let titleSizeClass = "font-bold mb-2 font-roboto leading-tight";
+  // Title styling based on size - using BBC News standards
+  let titleSizeClass = "font-semibold mb-2 leading-tight";
   
   if (size === "small") {
-    titleSizeClass += " text-base";
+    titleSizeClass += " text-[1rem]"; // 16px
   } else if (size === "medium") {
-    titleSizeClass += " text-xl";
+    titleSizeClass += " text-[1.125rem]"; // 18px
   } else if (size === "large") {
-    titleSizeClass += " text-2xl lg:text-3xl";
+    titleSizeClass += " text-[1.25rem] lg:text-[1.5rem]"; // 20px/24px
     containerClass += " pb-6";
   }
   
@@ -52,15 +52,15 @@ export default function ArticleCard({
           </div>
         )}
       </div>
-      <h3 className={titleSizeClass}>
+      <h3 className={titleSizeClass} style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>
         <Link href={`/article/${slug}`}>
           <span className="hover:text-[#BB1919] cursor-pointer">{title}</span>
         </Link>
       </h3>
       {showSummary && (
-        <p className="text-gray-700 mb-3 text-sm leading-snug">{summary}</p>
+        <p className="text-[#404040] mb-3 text-[0.9375rem] leading-[1.35]" style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>{summary}</p>
       )}
-      <div className="flex items-center text-xs text-gray-500">
+      <div className="flex items-center text-[0.8125rem] text-[#5A5A5A]" style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>
         <span>{formattedDate}</span>
         {showCategory && category && size !== "large" && (
           <>
