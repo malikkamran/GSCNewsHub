@@ -391,6 +391,50 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                         </FormItem>
                       )}
                     />
+                    
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <FormLabel>Publication Status</FormLabel>
+                          <FormControl>
+                            <div className="flex flex-col space-y-1 rounded-lg border p-4">
+                              <label className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  checked={field.value === "published"}
+                                  onChange={() => field.onChange("published")}
+                                  className="h-4 w-4 text-[#BB1919]"
+                                />
+                                <div>
+                                  <div className="font-medium">Published</div>
+                                  <div className="text-sm text-gray-500">
+                                    Article will be visible to all users
+                                  </div>
+                                </div>
+                              </label>
+                              <div className="my-2 border-t"></div>
+                              <label className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  checked={field.value === "draft"}
+                                  onChange={() => field.onChange("draft")}
+                                  className="h-4 w-4 text-[#BB1919]"
+                                />
+                                <div>
+                                  <div className="font-medium">Draft</div>
+                                  <div className="text-sm text-gray-500">
+                                    Save as draft (not visible to users)
+                                  </div>
+                                </div>
+                              </label>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     {articleId && (
                       <div className="flex items-center space-x-2 text-sm text-gray-500 mt-4">

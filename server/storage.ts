@@ -483,6 +483,7 @@ export class MemStorage implements IStorage {
       id,
       views: 0,
       featured: insertArticle.featured || false,
+      status: insertArticle.status || "published",
       publishedAt: insertArticle.publishedAt || new Date()
     };
     this.articles.set(id, article);
@@ -501,6 +502,7 @@ export class MemStorage implements IStorage {
       id,
       views: existingArticle.views || 0,
       featured: insertArticle.featured || false,
+      status: insertArticle.status || existingArticle.status || "published",
       publishedAt: insertArticle.publishedAt || existingArticle.publishedAt
     };
     
