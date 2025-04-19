@@ -44,11 +44,11 @@ export default function Header() {
               <Link href="/">
                 <div className="flex items-center cursor-pointer">
                   <img 
-                    src="./assets/gsc-logo.svg" 
+                    src="/gsc-logo.svg" 
                     alt="GSC News Logo" 
-                    className="h-12 md:h-16"
+                    className="h-12 w-12 md:h-16 md:w-16 mr-3"
                   />
-                  <span className="ml-3 text-[#BB1919] font-roboto font-bold text-lg md:text-2xl">
+                  <span className="text-[#BB1919] font-roboto font-bold text-lg md:text-2xl">
                     Supply Chain News
                   </span>
                 </div>
