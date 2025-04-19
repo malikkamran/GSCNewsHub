@@ -4,15 +4,25 @@ import {
   articles, type Article, type InsertArticle,
   analysts, type Analyst, type InsertAnalyst,
   analysis, type Analysis, type InsertAnalysis,
-  videos, type Video, type InsertVideo
+  videos, type Video, type InsertVideo,
+  userPreferences, type UserPreferences, type InsertUserPreferences
 } from "@shared/schema";
 
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>; 
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  
+  // User Preferences operations
+  getUserPreferences(userId: number): Promise<UserPreferences[]>;
+  getUserPreferencesByCategory(userId: number, categoryId: number): Promise<UserPreferences | undefined>;
+  createUserPreference(preference: InsertUserPreferences): Promise<UserPreferences>;
+  updateUserPreference(id: number, preference: Partial<InsertUserPreferences>): Promise<UserPreferences | undefined>;
+  deleteUserPreference(id: number): Promise<boolean>;
+  
   // Category operations
   getCategories(): Promise<Category[]>;
   getCategoryBySlug(slug: string): Promise<Category | undefined>;
@@ -56,6 +66,7 @@ export class MemStorage implements IStorage {
   private analysts: Map<number, Analyst>;
   private analysis: Map<number, Analysis>;
   private videos: Map<number, Video>;
+  private userPreferences: Map<number, UserPreferences>;
   
   private userId: number = 1;
   private categoryId: number = 1;
@@ -63,6 +74,7 @@ export class MemStorage implements IStorage {
   private analystId: number = 1;
   private analysisId: number = 1;
   private videoId: number = 1;
+  private userPreferenceId: number = 1;
 
   constructor() {
     this.users = new Map();
@@ -71,6 +83,7 @@ export class MemStorage implements IStorage {
     this.analysts = new Map();
     this.analysis = new Map();
     this.videos = new Map();
+    this.userPreferences = new Map();
     
     // Initialize with default categories
     this.initializeData();

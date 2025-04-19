@@ -7,11 +7,21 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  email: text("email").notNull().unique(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  role: text("role").default("user").notNull(), // 'user', 'admin', 'editor'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastLogin: timestamp("last_login"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  email: true,
+  firstName: true,
+  lastName: true,
+  role: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -104,3 +114,26 @@ export const insertVideoSchema = createInsertSchema(videos).omit({
 
 export type InsertVideo = z.infer<typeof insertVideoSchema>;
 export type Video = typeof videos.$inferSelect;
+
+// User preferences table
+export const userPreferences = pgTable("user_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  categoryId: integer("category_id").references(() => categories.id),
+  notificationsEnabled: boolean("notifications_enabled").default(false).notNull(),
+  emailDigest: boolean("email_digest").default(false).notNull(),
+  digestFrequency: text("digest_frequency").default("weekly"), // 'daily', 'weekly', 'monthly'
+  theme: text("theme").default("light"), // 'light', 'dark'
+});
+
+export const insertUserPreferencesSchema = createInsertSchema(userPreferences).pick({
+  userId: true,
+  categoryId: true,
+  notificationsEnabled: true,
+  emailDigest: true,
+  digestFrequency: true,
+  theme: true,
+});
+
+export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+export type UserPreferences = typeof userPreferences.$inferSelect;
