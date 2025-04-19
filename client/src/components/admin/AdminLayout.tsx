@@ -141,6 +141,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <ArrowLeft className="h-4 w-4 mr-1" />
               <span className="hidden sm:inline-block">View Site</span>
             </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => handleNavigate("/admin")}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              <LayoutDashboard className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline-block">Dashboard</span>
+            </Button>
           </div>
 
           <div className="flex items-center space-x-2">

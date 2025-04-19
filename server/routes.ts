@@ -90,8 +90,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+      const includeAll = req.query.includeAll === 'true';
       
-      const articles = await storage.getArticles(limit, offset);
+      // Get all articles
+      let articles = await storage.getArticles(limit, offset);
+      
+      // Filter out draft articles for public view unless includeAll is true (for admin)
+      if (!includeAll) {
+        articles = articles.filter(article => article.status === 'published');
+      }
+      
       res.json(articles);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch articles' });
@@ -102,7 +110,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 1;
       const featuredArticles = await storage.getFeaturedArticles(limit);
-      res.json(featuredArticles);
+      
+      // Filter out draft articles
+      const publishedFeaturedArticles = featuredArticles.filter(article => article.status === 'published');
+      
+      res.json(publishedFeaturedArticles);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch featured articles' });
     }
@@ -112,7 +124,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
       const mostViewedArticles = await storage.getMostViewedArticles(limit);
-      res.json(mostViewedArticles);
+      
+      // Filter out draft articles
+      const publishedMostViewedArticles = mostViewedArticles.filter(article => article.status === 'published');
+      
+      res.json(publishedMostViewedArticles);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch most viewed articles' });
     }
@@ -124,7 +140,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
       
-      const articles = await storage.getArticlesByCategory(categoryId, limit, offset);
+      let articles = await storage.getArticlesByCategory(categoryId, limit, offset);
+      
+      // Filter out draft articles
+      articles = articles.filter(article => article.status === 'published');
+      
       res.json(articles);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch articles by category' });
@@ -138,6 +158,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const article = await storage.getArticleBySlug(slug);
       
       if (!article) {
+        return res.status(404).json({ message: 'Article not found' });
+      }
+      
+      // Check if article is published
+      if (article.status !== 'published') {
         return res.status(404).json({ message: 'Article not found' });
       }
       
