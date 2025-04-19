@@ -1,6 +1,5 @@
 import React from "react";
 import { Helmet } from "react-helmet";
-import MainLayout from "@/components/layout/MainLayout";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,7 +12,7 @@ import { ChevronRight } from "lucide-react";
 
 export default function TermsPage() {
   return (
-    <MainLayout>
+    <div className="bg-gray-50">
       <Helmet>
         <title>Terms of Use | GSC Supply Chain News</title>
         <meta
@@ -114,6 +113,6 @@ export default function TermsPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </div>
   );
 }

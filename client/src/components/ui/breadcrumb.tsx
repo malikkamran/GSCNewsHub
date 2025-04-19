@@ -48,17 +48,18 @@ BreadcrumbItem.displayName = "BreadcrumbItem"
 
 const BreadcrumbLink = React.forwardRef<
   HTMLAnchorElement,
-  React.ComponentProps<typeof Link>
+  React.ComponentProps<typeof Link> & { className?: string }
 >(({ children, href, className, ...props }, ref) => (
   <Link
     to={href || "#"}
-    className={cn(
-      "text-muted-foreground transition-colors hover:text-foreground font-normal",
-      className
-    )}
     {...props}
   >
-    {children}
+    <span className={cn(
+      "text-muted-foreground transition-colors hover:text-foreground font-normal",
+      className
+    )}>
+      {children}
+    </span>
   </Link>
 ))
 BreadcrumbLink.displayName = "BreadcrumbLink"
