@@ -736,6 +736,85 @@ export class MemStorage implements IStorage {
     this.videos.set(id, video);
     return video;
   }
+  
+  async searchArticles(query: string, limit: number = 10, offset: number = 0): Promise<{ articles: Article[], total: number }> {
+    if (!query) {
+      return { articles: [], total: 0 };
+    }
+    
+    // Get all published articles
+    const allArticles = Array.from(this.articles.values()).filter(article => article.status === 'published');
+    
+    // Normalize query term
+    const normalizedQuery = query.toLowerCase().trim();
+    
+    // Split query into individual terms for better matching
+    const queryTerms = normalizedQuery.split(/\s+/).filter(term => term.length > 2);
+    
+    // Score and filter articles based on relevance
+    const scoredArticles = allArticles.map(article => {
+      let score = 0;
+      
+      // Check for matches in the title (highest weight)
+      const titleLower = article.title.toLowerCase();
+      if (titleLower.includes(normalizedQuery)) {
+        score += 10;
+      }
+      
+      queryTerms.forEach(term => {
+        if (titleLower.includes(term)) {
+          score += 5;
+        }
+      });
+      
+      // Check for matches in summary (medium weight)
+      const summaryLower = article.summary.toLowerCase();
+      if (summaryLower.includes(normalizedQuery)) {
+        score += 5;
+      }
+      
+      queryTerms.forEach(term => {
+        if (summaryLower.includes(term)) {
+          score += 3;
+        }
+      });
+      
+      // Check for matches in content (lower weight but still important)
+      const contentLower = article.content.toLowerCase();
+      if (contentLower.includes(normalizedQuery)) {
+        score += 3;
+      }
+      
+      queryTerms.forEach(term => {
+        if (contentLower.includes(term)) {
+          score += 1;
+        }
+      });
+      
+      // Check for exact slug match
+      const slugLower = article.slug.toLowerCase();
+      if (slugLower.includes(normalizedQuery)) {
+        score += 8;
+      }
+      
+      return { article, score };
+    });
+    
+    // Filter out non-matching articles and sort by score
+    const relevantArticles = scoredArticles
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score);
+    
+    // Apply pagination
+    const paginatedArticles = relevantArticles
+      .slice(offset, offset + limit)
+      .map(item => item.article);
+    
+    return {
+      articles: paginatedArticles,
+      total: relevantArticles.length
+    };
+  }
 }
 
 export const storage = new MemStorage();

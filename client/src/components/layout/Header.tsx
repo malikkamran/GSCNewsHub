@@ -105,18 +105,32 @@ export default function Header() {
             </div>
             <div className="hidden md:flex items-center space-x-4">
               <div className="relative">
-                <Input 
-                  type="text" 
-                  placeholder="Search" 
-                  className="py-1 px-3 pr-8 rounded-none text-sm w-48 h-8 border-none focus-visible:ring-0"
-                />
-                <Button 
-                  size="icon"
-                  variant="ghost" 
-                  className="absolute right-1 top-0 text-gray-600 h-8 w-8"
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const searchQuery = formData.get("search") as string;
+                    if (searchQuery.trim()) {
+                      window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+                    }
+                  }}
+                  className="flex"
                 >
-                  <Search size={16} />
-                </Button>
+                  <Input 
+                    type="text" 
+                    name="search" 
+                    placeholder="Search" 
+                    className="py-1 px-3 pr-8 rounded-none text-sm w-48 h-8 border-none focus-visible:ring-0"
+                  />
+                  <Button 
+                    type="submit"
+                    size="icon"
+                    variant="ghost" 
+                    className="absolute right-1 top-0 text-gray-600 h-8 w-8"
+                  >
+                    <Search size={16} />
+                  </Button>
+                </form>
               </div>
             </div>
             <Button 
@@ -215,18 +229,32 @@ export default function Header() {
       {/* Mobile Search */}
       <div className="md:hidden px-4 py-2 bg-gray-100">
         <div className="relative">
-          <Input 
-            type="text" 
-            placeholder="Search GSC Supply Chain News" 
-            className="w-full py-2 px-3 pr-8 rounded-none text-sm"
-          />
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-600 h-8 w-8"
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const searchQuery = formData.get("mobile-search") as string;
+              if (searchQuery.trim()) {
+                window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+              }
+            }}
+            className="flex w-full"
           >
-            <Search size={16} />
-          </Button>
+            <Input 
+              type="text" 
+              name="mobile-search"
+              placeholder="Search GSC Supply Chain News" 
+              className="w-full py-2 px-3 pr-8 rounded-none text-sm"
+            />
+            <Button 
+              type="submit"
+              variant="ghost" 
+              size="icon" 
+              className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-600 h-8 w-8"
+            >
+              <Search size={16} />
+            </Button>
+          </form>
         </div>
       </div>
       

@@ -624,6 +624,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to fetch featured video' });
     }
   });
+  
+  // Search endpoint
+  app.get("/api/search", async (req: Request, res: Response) => {
+    try {
+      const query = req.query.q as string;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+      
+      if (!query) {
+        return res.json({ articles: [], total: 0 });
+      }
+      
+      const results = await storage.searchArticles(query, limit, offset);
+      
+      // Enhance article results with category information
+      const enhancedResults = {
+        ...results,
+        articles: await Promise.all(
+          results.articles.map(async (article) => {
+            const category = await storage.getCategory(article.categoryId);
+            return {
+              ...article,
+              category
+            };
+          })
+        )
+      };
+      
+      res.json(enhancedResults);
+    } catch (error) {
+      console.error("Search error:", error);
+      res.status(500).json({ error: "Error performing search" });
+    }
+  });
 
   // Create HTTP server
   const httpServer = createServer(app);
