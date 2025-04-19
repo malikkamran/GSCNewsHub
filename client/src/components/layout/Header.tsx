@@ -44,7 +44,7 @@ export default function Header() {
               <Link href="/">
                 <div className="flex items-center cursor-pointer">
                   <img 
-                    src="/assets/gsc-logo.svg" 
+                    src="./assets/gsc-logo.svg" 
                     alt="GSC News Logo" 
                     className="h-12 md:h-16"
                   />
