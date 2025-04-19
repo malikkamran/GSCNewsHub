@@ -530,9 +530,17 @@ export class MemStorage implements IStorage {
   async getArticles(limit: number = 10, offset: number = 0, status?: string): Promise<Article[]> {
     let articles = Array.from(this.articles.values());
     
+    // Log the status parameter for debugging
+    console.log(`Fetching articles with status filter: ${status || 'none'}`);
+    console.log(`Before filtering: ${articles.length} articles`);
+    
     // Filter by status if provided
     if (status) {
       articles = articles.filter(article => article.status === status);
+      console.log(`After filtering by status '${status}': ${articles.length} articles`);
+      // Log the statuses of all articles for debugging
+      console.log("Article statuses in database:", 
+        Array.from(this.articles.values()).map(a => ({ id: a.id, status: a.status })));
     }
     
     return articles
