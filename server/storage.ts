@@ -42,6 +42,9 @@ export interface IStorage {
   updateArticle(id: number, article: InsertArticle): Promise<Article | undefined>;
   deleteArticle(id: number): Promise<boolean>;
   incrementArticleViews(id: number): Promise<Article | undefined>;
+  
+  // Search operations
+  searchArticles(query: string, limit?: number, offset?: number): Promise<{ articles: Article[], total: number }>;
 
   // Analyst operations
   getAnalysts(): Promise<Analyst[]>;

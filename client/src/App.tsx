@@ -14,6 +14,8 @@ import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import CookiePage from "@/pages/CookiePage";
 import ContactPage from "@/pages/ContactPage";
+import AdvertisePage from "@/pages/AdvertisePage";
+import SearchPage from "@/pages/SearchPage";
 import AuthPage from "@/pages/auth-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -42,6 +44,8 @@ function Router() {
       <Route path="/privacy" component={PrivacyPage}/>
       <Route path="/cookies" component={CookiePage}/>
       <Route path="/contact" component={ContactPage}/>
+      <Route path="/advertise" component={AdvertisePage}/>
+      <Route path="/search" component={SearchPage}/>
       
       {/* Admin routes */}
       <Route path="/admin/login" component={AdminLogin}/>
