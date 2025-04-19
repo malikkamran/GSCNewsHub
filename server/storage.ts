@@ -357,6 +357,19 @@ export class MemStorage implements IStorage {
         imageUrl: "https://randomuser.me/api/portraits/men/32.jpg"
       });
       
+      // Add a test draft article
+      this.createArticle({
+        title: "TEST DRAFT: New Logistics Technology Preview",
+        slug: "test-draft-logistics-technology-preview",
+        summary: "This is a draft article for testing the draft filter functionality.",
+        content: "This content will only be visible in the admin section since this is a draft article. It should not appear on the public site.",
+        imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        categoryId: logisticsCategory.id,
+        featured: false,
+        status: "draft",
+        publishedAt: new Date()
+      });
+      
       // Create analysis articles
       const sarahAnalyst = Array.from(this.analysts.values()).find(a => a.name === "Sarah Johnson");
       const michaelAnalyst = Array.from(this.analysts.values()).find(a => a.name === "Michael Chen");
