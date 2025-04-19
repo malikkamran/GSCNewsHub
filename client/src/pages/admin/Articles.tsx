@@ -77,14 +77,14 @@ export default function ArticlesPage() {
     setCurrentPage(1);
   }, [searchTerm, categoryFilter, statusFilter, sortBy]);
   
-  // Fetch articles
+  // Fetch articles - add status filter to the query when it's set
   const {
     data: articles = [],
     isLoading: articlesLoading,
     refetch: refetchArticles,
   } = useQuery({
-    queryKey: ["/api/articles"],
-    retry: false,
+    queryKey: ["/api/articles", statusFilter !== "all" ? { status: statusFilter } : { includeAll: true }],
+    retry: false
   });
   
   // Fetch categories for filter dropdown
@@ -108,9 +108,10 @@ export default function ArticlesPage() {
         description: "The article has been successfully deleted.",
       });
       
-      // Refresh article list
+      // Refresh article list - invalidate all article queries
       queryClient.invalidateQueries({
         queryKey: ["/api/articles"],
+        exact: false
       });
       
       setShowDeleteDialog(false);

@@ -310,16 +310,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+      const status = req.query.status as string | undefined;
       const includeAll = req.query.includeAll === 'true';
       
-      // Get all articles
-      let articles = await storage.getArticles(limit, offset);
+      // If specific status is requested, use it directly
+      if (status) {
+        const articles = await storage.getArticles(limit, offset, status);
+        return res.json(articles);
+      } 
       
-      // Filter out draft articles for public view unless includeAll is true (for admin)
+      // If no specific status and not including all, return only published
       if (!includeAll) {
-        articles = articles.filter(article => article.status === 'published');
-      }
+        const articles = await storage.getArticles(limit, offset, 'published');
+        return res.json(articles);
+      } 
       
+      // Otherwise return all articles (for admin views)
+      const articles = await storage.getArticles(limit, offset);
       res.json(articles);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch articles' });
