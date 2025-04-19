@@ -83,7 +83,9 @@ export default function ArticlesPage() {
     isLoading: articlesLoading,
     refetch: refetchArticles,
   } = useQuery({
-    queryKey: ["/api/articles", statusFilter !== "all" ? { status: statusFilter } : { includeAll: true }],
+    queryKey: [statusFilter !== "all" 
+      ? `/api/articles?status=${statusFilter}` 
+      : "/api/articles"],
     retry: false
   });
   

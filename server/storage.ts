@@ -584,12 +584,12 @@ export class MemStorage implements IStorage {
     // If this article is set as featured, unset any other featured articles
     if (insertArticle.featured) {
       console.log("Creating a new featured article - unsetting previous featured articles");
-      for (const article of this.articles.values()) {
+      Array.from(this.articles.values()).forEach(article => {
         if (article.featured) {
           article.featured = false;
           this.articles.set(article.id, article);
         }
-      }
+      });
     }
     
     const article: Article = { 
@@ -614,12 +614,12 @@ export class MemStorage implements IStorage {
     // Check if this article is being set as featured
     if (insertArticle.featured && !existingArticle.featured) {
       console.log(`Setting article ${id} as featured - unsetting previous featured articles`);
-      for (const article of this.articles.values()) {
+      Array.from(this.articles.values()).forEach(article => {
         if (article.featured && article.id !== id) {
           article.featured = false;
           this.articles.set(article.id, article);
         }
-      }
+      });
     }
     
     const updatedArticle: Article = { 
