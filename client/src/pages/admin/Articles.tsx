@@ -584,6 +584,10 @@ export default function ArticlesPage() {
                   <span className="font-medium w-24">Published:</span> 
                   {new Date(articleToDeleteDetails.publishedAt).toLocaleDateString()}
                 </div>
+                <div className="flex items-center text-gray-600">
+                  <span className="font-medium w-24">Publisher:</span> 
+                  {articleToDeleteDetails.publishedBy || "Unknown"}
+                </div>
               </div>
             </div>
           )}
