@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet";
 import Breadcrumb from "@/components/common/Breadcrumb";
 import AdBanner from "@/components/layout/AdBanner";
-import FeaturedStory from "@/components/home/FeaturedStory";
+import TopStories from "@/components/home/TopStories";
 import LatestNews from "@/components/home/LatestNews";
 import CategorySection from "@/components/home/CategorySection";
 import MostRead from "@/components/sidebar/MostRead";
@@ -36,7 +36,7 @@ export default function Home() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
           <div className="lg:w-2/3">
-            <FeaturedStory />
+            <TopStories />
             <LatestNews />
             
             {/* In-content Ad */}
