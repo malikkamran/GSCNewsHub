@@ -108,9 +108,9 @@ export default function ContactPage() {
                     <div>
                       <h3 className="font-medium">Email Us</h3>
                       <p className="text-sm text-gray-600">General Inquiries:</p>
-                      <p className="text-sm">info@gscsupplychainnews.com</p>
+                      <p className="text-sm">info@GSCnews.co</p>
                       <p className="text-sm text-gray-600 mt-1">Editorial Team:</p>
-                      <p className="text-sm">editorial@gscsupplychainnews.com</p>
+                      <p className="text-sm">info@GSCnews.co</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -124,21 +124,6 @@ export default function ContactPage() {
                       <p className="text-sm">+1 (555) 123-4567</p>
                       <p className="text-sm text-gray-600 mt-1">Customer Support:</p>
                       <p className="text-sm">+1 (555) 987-6543</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-4 flex items-start space-x-3">
-                    <MapPin className="h-5 w-5 text-[#BB1919] mt-0.5" />
-                    <div>
-                      <h3 className="font-medium">Our Location</h3>
-                      <p className="text-sm">
-                        GSC Supply Chain News<br />
-                        1234 Supply Chain Drive<br />
-                        Logistics Center, NY 10001<br />
-                        United States
-                      </p>
                     </div>
                   </CardContent>
                 </Card>
