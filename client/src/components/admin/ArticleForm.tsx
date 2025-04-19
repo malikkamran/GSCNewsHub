@@ -392,12 +392,49 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                           <FormControl>
                             <Switch
                               checked={field.value}
-                              onCheckedChange={field.onChange}
+                              onCheckedChange={(checked) => {
+                                // If turning on featured, show confirmation dialog
+                                if (checked && !field.value) {
+                                  setPendingFeaturedValue(checked);
+                                  setShowFeaturedDialog(true);
+                                } else {
+                                  // If turning off, no confirmation needed
+                                  field.onChange(checked);
+                                }
+                              }}
                             />
                           </FormControl>
                         </FormItem>
                       )}
                     />
+                    
+                    {/* Confirmation dialog for setting article as featured */}
+                    <AlertDialog open={showFeaturedDialog} onOpenChange={setShowFeaturedDialog}>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center">
+                            <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2" />
+                            Set as Featured Article?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will replace the current featured article on the homepage.
+                            Only one article can be featured at a time.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => setPendingFeaturedValue(false)}>
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => {
+                              form.setValue("featured", pendingFeaturedValue);
+                            }}
+                          >
+                            Confirm
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                     
                     <FormField
                       control={form.control}
