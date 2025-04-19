@@ -46,6 +46,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Article } from "@/lib/types";
 
 // Create a schema for article form
 const articleSchema = z.object({
@@ -71,7 +73,9 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showFeaturedDialog, setShowFeaturedDialog] = useState(false);
+  const [showReplaceDialog, setShowReplaceDialog] = useState(false);
   const [pendingFeaturedValue, setPendingFeaturedValue] = useState(false);
+  const [selectedArticleToReplace, setSelectedArticleToReplace] = useState<number | null>(null);
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -83,6 +87,21 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
   } = useQuery({
     queryKey: ["/api/categories"],
     retry: false,
+  });
+  
+  // Get featured articles to check if we already have 3
+  const { 
+    data: featuredArticles = [], 
+    isLoading: featuredLoading 
+  } = useQuery<Article[]>({
+    queryKey: ["/api/articles/featured", { limit: 10 }],
+    queryFn: async () => {
+      const response = await fetch('/api/articles/featured?limit=10');
+      if (!response.ok) {
+        throw new Error('Failed to fetch featured articles');
+      }
+      return response.json();
+    }
   });
 
   // Create form with validation
@@ -393,10 +412,22 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                             <Switch
                               checked={field.value}
                               onCheckedChange={(checked) => {
-                                // If turning on featured, show confirmation dialog
+                                // If turning on featured and we already have 3+ featured articles
                                 if (checked && !field.value) {
                                   setPendingFeaturedValue(checked);
-                                  setShowFeaturedDialog(true);
+                                  
+                                  // Filter out current article if we're editing
+                                  const otherFeaturedArticles = articleId 
+                                    ? featuredArticles.filter(a => a.id !== articleId)
+                                    : featuredArticles;
+                                    
+                                  if (otherFeaturedArticles.length >= 3) {
+                                    // If we already have 3 featured articles, show replace dialog
+                                    setShowReplaceDialog(true);
+                                  } else {
+                                    // Otherwise just show confirmation dialog
+                                    setShowFeaturedDialog(true);
+                                  }
                                 } else {
                                   // If turning off, no confirmation needed
                                   field.onChange(checked);
@@ -408,7 +439,7 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                       )}
                     />
                     
-                    {/* Confirmation dialog for setting article as featured */}
+                    {/* Standard confirmation dialog for setting article as featured */}
                     <AlertDialog open={showFeaturedDialog} onOpenChange={setShowFeaturedDialog}>
                       <AlertDialogContent>
                         <AlertDialogHeader>
@@ -417,8 +448,8 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                             Set as Featured Article?
                           </AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will replace the current featured article on the homepage.
-                            Only one article can be featured at a time.
+                            Featured articles appear prominently in the Top Stories section on the homepage.
+                            Up to 3 articles can be featured at the same time.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -431,6 +462,94 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                             }}
                           >
                             Confirm
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    
+                    {/* Replace dialog for when we have more than 3 featured articles */}
+                    <AlertDialog open={showReplaceDialog} onOpenChange={setShowReplaceDialog}>
+                      <AlertDialogContent className="max-w-2xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center">
+                            <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2" />
+                            Select Article to Replace
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            You already have 3 featured articles. To add a new featured article, 
+                            please select which existing featured article you want to replace:
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        
+                        <div className="my-4 max-h-[300px] overflow-y-auto">
+                          <RadioGroup 
+                            value={selectedArticleToReplace?.toString()} 
+                            onValueChange={(value) => setSelectedArticleToReplace(parseInt(value))}
+                            className="space-y-4"
+                          >
+                            {featuredArticles
+                              .filter(article => !articleId || article.id !== articleId)
+                              .map(article => (
+                                <div key={article.id} className="flex items-start space-x-3 border rounded-md p-3">
+                                  <RadioGroupItem value={article.id.toString()} id={`article-${article.id}`} className="mt-1" />
+                                  <div className="flex-1">
+                                    <label htmlFor={`article-${article.id}`} className="flex flex-col cursor-pointer">
+                                      <span className="font-medium text-base">{article.title}</span>
+                                      <span className="text-sm text-gray-500 line-clamp-2">{article.summary}</span>
+                                    </label>
+                                  </div>
+                                </div>
+                              ))
+                            }
+                          </RadioGroup>
+                        </div>
+                        
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => {
+                            setPendingFeaturedValue(false);
+                            setSelectedArticleToReplace(null);
+                          }}>
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={async () => {
+                              if (selectedArticleToReplace) {
+                                try {
+                                  // Unfeature the selected article
+                                  const articleToUpdate = featuredArticles.find(a => a.id === selectedArticleToReplace);
+                                  if (articleToUpdate) {
+                                    await apiRequest("PUT", `/api/articles/${selectedArticleToReplace}`, {
+                                      ...articleToUpdate,
+                                      featured: false
+                                    });
+                                    
+                                    // Set current article as featured
+                                    form.setValue("featured", true);
+                                    
+                                    // Invalidate queries to refresh data
+                                    queryClient.invalidateQueries({
+                                      queryKey: ["/api/articles/featured"],
+                                    });
+                                    
+                                    toast({
+                                      title: "Featured article updated",
+                                      description: `"${articleToUpdate.title}" has been replaced as a featured article.`,
+                                    });
+                                  }
+                                } catch (error) {
+                                  console.error("Error updating featured articles:", error);
+                                  toast({
+                                    title: "Error",
+                                    description: "Failed to update featured articles. Please try again.",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }
+                              setSelectedArticleToReplace(null);
+                            }}
+                            disabled={!selectedArticleToReplace}
+                          >
+                            Replace Selected Article
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
