@@ -14,7 +14,7 @@ export default function ArticlePage() {
   const { slug } = useParams();
   
   const { data: article, isLoading } = useQuery<Article>({
-    queryKey: [`/api/articles/${slug}`],
+    queryKey: [`/api/articles/slug/${slug}`],
   });
   
   const { data: categories } = useQuery<Category[]>({

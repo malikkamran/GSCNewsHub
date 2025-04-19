@@ -131,7 +131,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/articles/:slug', async (req, res) => {
+  // Get article by slug (for public view)
+  app.get('/api/articles/slug/:slug', async (req, res) => {
     try {
       const { slug } = req.params;
       const article = await storage.getArticleBySlug(slug);
@@ -142,6 +143,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Increment view count
       await storage.incrementArticleViews(article.id);
+      
+      res.json(article);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch article' });
+    }
+  });
+  
+  // Get article by ID (for admin editing)
+  app.get('/api/articles/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid article ID' });
+      }
+      
+      const article = await storage.getArticle(id);
+      
+      if (!article) {
+        return res.status(404).json({ message: 'Article not found' });
+      }
       
       res.json(article);
     } catch (error) {
