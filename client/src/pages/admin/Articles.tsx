@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Helmet } from "react-helmet";
-import AdminLayout from "@/components/admin/AdminLayout";
-import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
+import { Search, Filter, Plus, Edit, Eye, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
-import { Plus, Filter, Search, Eye, Edit, Trash2, ArrowDown, ArrowUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -15,64 +18,76 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-export default function AdminArticles() {
-  const [, setLocation] = useLocation();
+export default function ArticlesPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [articleToDelete, setArticleToDelete] = useState<number | null>(null);
-  const [sortField, setSortField] = useState<string>("publishedAt");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [location, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const perPage = 10;
 
-  // Fetch articles
-  const { data: articles, isLoading } = useQuery({
+  // Extract filter from URL if present
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const filter = params.get("filter");
+    if (filter === "featured") {
+      setCategoryFilter("featured");
+    }
+  }, []);
+
+  // Fetch all articles
+  const {
+    data: articles = [],
+    isLoading: articlesLoading,
+    refetch: refetchArticles,
+  } = useQuery({
     queryKey: ["/api/articles"],
     retry: false,
   });
 
-  // Fetch categories for filtering
-  const { data: categories } = useQuery({
+  // Fetch all categories for filtering
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["/api/categories"],
     retry: false,
   });
 
-  // Function to handle delete confirmation
-  const handleDeleteConfirm = async () => {
-    if (!articleToDelete) return;
-
+  // Handle delete article
+  const handleDeleteArticle = async (id: number) => {
     try {
-      await apiRequest(`/api/articles/${articleToDelete}`, {
+      await apiRequest(`/api/articles/${id}`, {
         method: "DELETE",
       });
-
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({
+        queryKey: ["/api/articles"],
+      });
+      
       toast({
         title: "Article deleted",
         description: "The article has been successfully deleted.",
       });
-
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ["/api/articles"] });
-      setDeleteDialogOpen(false);
-      setArticleToDelete(null);
     } catch (error) {
+      console.error("Error deleting article:", error);
       toast({
         title: "Error",
         description: "Failed to delete the article. Please try again.",
@@ -81,54 +96,76 @@ export default function AdminArticles() {
     }
   };
 
-  // Function to handle sorting
-  const handleSort = (field: string) => {
-    if (field === sortField) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("desc");
-    }
-  };
-
-  // Filter and sort articles
-  const filteredArticles = articles
-    ? articles.filter((article: any) =>
-        article.title.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : [];
-
-  const sortedArticles = [...filteredArticles].sort((a: any, b: any) => {
-    if (sortField === "publishedAt") {
-      const dateA = new Date(a.publishedAt).getTime();
-      const dateB = new Date(b.publishedAt).getTime();
-      return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
+  // Filter articles based on search term and category
+  const filteredArticles = articles.filter((article: any) => {
+    const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         article.summary.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (categoryFilter === "featured") {
+      return matchesSearch && article.featured;
+    } else if (categoryFilter) {
+      return matchesSearch && article.categoryId === parseInt(categoryFilter);
     }
     
-    if (sortField === "title") {
-      return sortDirection === "asc"
-        ? a.title.localeCompare(b.title)
-        : b.title.localeCompare(a.title);
-    }
-    
-    if (sortField === "views") {
-      return sortDirection === "asc"
-        ? (a.views || 0) - (b.views || 0)
-        : (b.views || 0) - (a.views || 0);
-    }
-    
-    return 0;
+    return matchesSearch;
   });
 
-  // Render sort indicator
-  const renderSortIndicator = (field: string) => {
-    if (sortField !== field) return null;
+  // Paginate the filtered articles
+  const paginatedArticles = filteredArticles.slice(
+    (page - 1) * perPage,
+    page * perPage
+  );
+
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredArticles.length / perPage);
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(date);
+  };
+
+  // Calculate pagination numbers
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxPagesToShow = 5;
     
-    return sortDirection === "asc" ? (
-      <ArrowUp className="ml-1 h-4 w-4" />
-    ) : (
-      <ArrowDown className="ml-1 h-4 w-4" />
-    );
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+      
+      // Determine start and end pages to show
+      let startPage = Math.max(2, page - 1);
+      let endPage = Math.min(totalPages - 1, page + 1);
+      
+      // Adjust to show 3 pages in the middle
+      if (startPage === 2) endPage = Math.min(4, totalPages - 1);
+      if (endPage === totalPages - 1) startPage = Math.max(2, totalPages - 3);
+      
+      // Add ellipsis after first page if needed
+      if (startPage > 2) pages.push('...');
+      
+      // Add middle pages
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+      
+      // Add ellipsis before last page if needed
+      if (endPage < totalPages - 1) pages.push('...');
+      
+      // Always show last page
+      pages.push(totalPages);
+    }
+    
+    return pages;
   };
 
   return (
@@ -139,225 +176,219 @@ export default function AdminArticles() {
 
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-1">Articles</h1>
-          <p className="text-gray-600">Manage your news articles</p>
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">Article Management</h1>
+          <p className="text-gray-600">Manage all news articles</p>
         </div>
-        <Button
-          onClick={() => setLocation("/admin/articles/create")}
-          className="bg-[#BB1919] hover:bg-[#A10000]"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Create Article
-        </Button>
+        <Link href="/admin/articles/create">
+          <Button className="bg-[#BB1919] hover:bg-[#A10000]">
+            <Plus className="mr-2 h-4 w-4" />
+            New Article
+          </Button>
+        </Link>
       </div>
 
-      <div className="bg-white rounded-md shadow-sm border p-6 mb-8">
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search articles..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full sm:w-auto">
-                <Filter className="mr-2 h-4 w-4" />
-                Filter
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setSearchTerm("")}>
-                All Categories
-              </DropdownMenuItem>
-              {categories?.map((category: any) => (
-                <DropdownMenuItem
-                  key={category.id}
-                  onClick={() => setSearchTerm(category.name)}
-                >
-                  {category.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search articles..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
+        <div className="w-full md:w-64">
+          <Select
+            value={categoryFilter}
+            onValueChange={setCategoryFilter}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="featured">Featured Articles</SelectItem>
+              {categories.map((category: any) => (
+                <SelectItem key={category.id} value={category.id.toString()}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-        {isLoading ? (
-          <div className="py-32 flex justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#BB1919]"></div>
-          </div>
-        ) : (
-          <>
-            <div className="rounded-md border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead
-                      className="w-[300px] cursor-pointer"
-                      onClick={() => handleSort("title")}
-                    >
-                      <div className="flex items-center">
-                        Title {renderSortIndicator("title")}
-                      </div>
-                    </TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead
-                      className="cursor-pointer"
-                      onClick={() => handleSort("publishedAt")}
-                    >
-                      <div className="flex items-center">
-                        Published {renderSortIndicator("publishedAt")}
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="text-center cursor-pointer"
-                      onClick={() => handleSort("views")}
-                    >
-                      <div className="flex items-center justify-center">
-                        Views {renderSortIndicator("views")}
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedArticles.length > 0 ? (
-                    sortedArticles.map((article: any) => {
-                      // Find the category name
-                      const category = categories?.find((c: any) => c.id === article.categoryId);
-                      
-                      return (
-                        <TableRow key={article.id}>
-                          <TableCell className="font-medium">
-                            <div className="line-clamp-1">{article.title}</div>
-                          </TableCell>
-                          <TableCell>
-                            {category?.name || "Uncategorized"}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(article.publishedAt).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {article.views || 0}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                article.featured
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-blue-100 text-blue-800"
-                              }`}
-                            >
-                              {article.featured ? "Featured" : "Published"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Link href={`/article/${article.slug}`}>
-                                <a
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-gray-500 hover:text-gray-700"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </a>
-                              </Link>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-blue-500 hover:text-blue-700"
-                                onClick={() =>
-                                  setLocation(`/admin/articles/edit/${article.id}`)
-                                }
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-red-500 hover:text-red-700"
-                                onClick={() => {
-                                  setArticleToDelete(article.id);
-                                  setDeleteDialogOpen(true);
-                                }}
-                              >
+      {/* Articles Table */}
+      {articlesLoading ? (
+        <div className="flex justify-center my-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#BB1919]"></div>
+        </div>
+      ) : filteredArticles.length === 0 ? (
+        <div className="bg-white rounded-md shadow p-8 text-center">
+          <h3 className="text-lg font-semibold mb-2">No articles found</h3>
+          <p className="text-gray-500 mb-6">
+            {searchTerm || categoryFilter
+              ? "Try adjusting your search or filter criteria."
+              : "Get started by creating your first article."}
+          </p>
+          <Link href="/admin/articles/create">
+            <Button className="bg-[#BB1919] hover:bg-[#A10000]">
+              <Plus className="mr-2 h-4 w-4" />
+              Create New Article
+            </Button>
+          </Link>
+        </div>
+      ) : (
+        <>
+          <div className="rounded-md border shadow overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10 text-center">ID</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead className="w-32">Category</TableHead>
+                  <TableHead className="w-32">Date</TableHead>
+                  <TableHead className="w-24 text-center">Featured</TableHead>
+                  <TableHead className="w-28 text-center">Views</TableHead>
+                  <TableHead className="w-28 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedArticles.map((article: any) => {
+                  const category = categories.find(
+                    (c: any) => c.id === article.categoryId
+                  );
+                  
+                  return (
+                    <TableRow key={article.id}>
+                      <TableCell className="text-center font-medium">
+                        {article.id}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{article.title}</div>
+                        <div className="text-sm text-gray-500 truncate max-w-xs">
+                          {article.summary}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {category ? (
+                          <Badge variant="outline" className="bg-gray-100">
+                            {category.name}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-gray-100">
+                            Uncategorized
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {formatDate(article.publishedAt)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {article.featured ? (
+                          <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-gray-300 mx-auto" />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {article.views || 0}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end items-center space-x-1">
+                          <Link href={`/admin/articles/edit/${article.id}`}>
+                            <Button variant="ghost" size="icon" className="text-blue-600 hover:text-blue-800 hover:bg-blue-50">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          <a
+                            href={`/article/${article.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Button variant="ghost" size="icon" className="text-gray-600 hover:text-gray-800 hover:bg-gray-50">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </a>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-800 hover:bg-red-50">
                                 <Trash2 className="h-4 w-4" />
                               </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10">
-                        <div className="flex flex-col items-center justify-center text-gray-500">
-                          <div className="rounded-full bg-gray-100 p-3 mb-3">
-                            <Search className="h-6 w-6" />
-                          </div>
-                          <p className="text-lg font-medium mb-1">No articles found</p>
-                          <p className="text-sm">
-                            {searchTerm
-                              ? `No results for "${searchTerm}"`
-                              : "Start by creating your first article"}
-                          </p>
-                          {searchTerm && (
-                            <Button
-                              variant="link"
-                              onClick={() => setSearchTerm("")}
-                              className="mt-2"
-                            >
-                              Clear search
-                            </Button>
-                          )}
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Article</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this article? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteArticle(article.id)}
+                                  className="bg-red-600 hover:bg-red-700 text-white"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
 
-            <div className="mt-4 text-sm text-gray-500">
-              Showing {sortedArticles.length} of {articles?.length || 0} articles
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center mt-6">
+              <div className="text-sm text-gray-500">
+                Showing {(page - 1) * perPage + 1} to{" "}
+                {Math.min(page * perPage, filteredArticles.length)} of{" "}
+                {filteredArticles.length} articles
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                {getPageNumbers().map((pageNum, i) => (
+                  pageNum === '...' ? (
+                    <span key={`ellipsis-${i}`} className="mx-1">...</span>
+                  ) : (
+                    <Button
+                      key={`page-${pageNum}`}
+                      variant={page === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setPage(Number(pageNum))}
+                      className={page === pageNum ? "bg-[#BB1919] hover:bg-[#A10000]" : ""}
+                    >
+                      {pageNum}
+                    </Button>
+                  )
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
             </div>
-          </>
-        )}
-      </div>
-
-      {/* Delete confirmation dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Article</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this article? This action cannot be
-              undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteConfirm}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          )}
+        </>
+      )}
     </AdminLayout>
   );
 }
