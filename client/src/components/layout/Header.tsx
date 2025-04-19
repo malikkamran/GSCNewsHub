@@ -1,12 +1,21 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, Search, User } from "lucide-react";
+import { LogOut, Menu, Search, User, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Category } from "@/lib/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import NavDropdown from "./NavDropdown";
+import { useAuth } from "@/hooks/use-auth";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
 export default function Header() {
   const [location] = useLocation();
@@ -22,15 +31,55 @@ export default function Header() {
     setShowMobileMenu(!showMobileMenu);
   };
 
+  const { user, logoutMutation } = useAuth();
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
   return (
     <header>
       {/* Top black bar */}
       <div className="bg-black py-1">
         <div className="container mx-auto px-4">
           <div className="flex justify-end">
-            <Link href="/sign-in">
-              <span className="text-white text-xs hover:underline cursor-pointer">Sign in</span>
-            </Link>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-6 px-2 flex items-center gap-1 text-white hover:text-white">
+                    <User size={14} />
+                    <span className="text-xs">{user.username}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="flex items-center gap-2">
+                    <Settings size={14} />
+                    <span>Preferences</span>
+                  </DropdownMenuItem>
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem className="flex items-center gap-2" asChild>
+                      <Link href="/admin/dashboard">
+                        <span>Admin Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 text-red-600" 
+                    onClick={handleLogout}
+                  >
+                    <LogOut size={14} />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link href="/auth">
+                <span className="text-white text-xs hover:underline cursor-pointer">Sign in / Register</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -185,6 +234,29 @@ export default function Header() {
       {showMobileMenu && (
         <nav className="md:hidden bg-gray-800" aria-label="Mobile menu">
           <ul className="text-white px-4 py-2">
+            {user ? (
+              <li>
+                <div className="flex items-center justify-between py-2 border-b border-gray-700">
+                  <span className="text-gray-300">Signed in as {user.username}</span>
+                  <Button 
+                    variant="ghost" 
+                    className="text-gray-300 px-2 py-1 hover:text-white" 
+                    onClick={handleLogout}
+                  >
+                    <LogOut size={16} className="mr-1" />
+                    <span>Log out</span>
+                  </Button>
+                </div>
+              </li>
+            ) : (
+              <li>
+                <Link href="/auth">
+                  <span className="mobile-nav-link block py-2 border-b border-gray-700">
+                    Sign in / Register
+                  </span>
+                </Link>
+              </li>
+            )}
             <li>
               <Link href="/">
                 <span className="mobile-nav-link block py-2 border-b border-gray-700">Home</span>

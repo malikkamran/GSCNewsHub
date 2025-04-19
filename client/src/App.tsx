@@ -9,6 +9,9 @@ import Footer from "@/components/layout/Footer";
 import Home from "@/pages/Home";
 import CategoryPage from "@/pages/CategoryPage";
 import ArticlePage from "@/pages/ArticlePage";
+import AuthPage from "@/pages/auth-page";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 // Admin pages
 import AdminLogin from "@/pages/admin/Login";
@@ -28,14 +31,15 @@ function Router() {
       <Route path="/" component={Home}/>
       <Route path="/category/:slug" component={CategoryPage}/>
       <Route path="/article/:slug" component={ArticlePage}/>
+      <Route path="/auth" component={AuthPage}/>
       
       {/* Admin routes */}
       <Route path="/admin/login" component={AdminLogin}/>
-      <Route path="/admin/dashboard" component={AdminDashboard}/>
-      <Route path="/admin/articles" component={AdminArticles}/>
-      <Route path="/admin/articles/create" component={AdminCreateArticle}/>
-      <Route path="/admin/articles/edit/:id" component={AdminEditArticle}/>
-      <Route path="/admin/categories" component={AdminCategories}/>
+      <ProtectedRoute path="/admin/dashboard" component={AdminDashboard}/>
+      <ProtectedRoute path="/admin/articles" component={AdminArticles}/>
+      <ProtectedRoute path="/admin/articles/create" component={AdminCreateArticle}/>
+      <ProtectedRoute path="/admin/articles/edit/:id" component={AdminEditArticle}/>
+      <ProtectedRoute path="/admin/categories" component={AdminCategories}/>
       
       <Route component={NotFound} />
     </Switch>
@@ -48,24 +52,26 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        {isAdminRoute ? (
-          // Admin routes don't need the public site header/footer
-          <main>
-            <Router />
-          </main>
-        ) : (
-          // Public site layout
-          <div className="flex flex-col min-h-screen">
-            <Header />
-            <main className="flex-grow">
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          {isAdminRoute ? (
+            // Admin routes don't need the public site header/footer
+            <main>
               <Router />
             </main>
-            <Footer />
-          </div>
-        )}
-      </TooltipProvider>
+          ) : (
+            // Public site layout
+            <div className="flex flex-col min-h-screen">
+              <Header />
+              <main className="flex-grow">
+                <Router />
+              </main>
+              <Footer />
+            </div>
+          )}
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

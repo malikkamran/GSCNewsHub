@@ -26,12 +26,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
-  } = useQuery<SelectUser | undefined, Error>({
-    queryKey: ["/api/auth/check"],
+  } = useQuery<SelectUser | null, Error>({
+    queryKey: ['/api/auth/check'],
     queryFn: async () => {
-      const res = await fetch("/api/auth/check");
-      const data = await res.json();
-      return data.authenticated ? data.user : undefined;
+      const response = await fetch('/api/auth/check');
+      const data = await response.json();
+      return data.authenticated ? data.user : null;
     },
   });
 
@@ -39,16 +39,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/auth/login", credentials);
       const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message || "Login failed");
+      if (!data.authenticated) {
+        throw new Error(data.message || 'Login failed');
       }
       return data.user;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/check"] });
+    onSuccess: (user: SelectUser) => {
+      queryClient.setQueryData(['/api/auth/check'], { authenticated: true, user });
       toast({
         title: "Login successful",
-        description: "You have been successfully logged in.",
+        description: `Welcome back, ${user.username}!`,
       });
     },
     onError: (error: Error) => {
@@ -64,16 +64,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (userData: InsertUser) => {
       const res = await apiRequest("POST", "/api/users/register", userData);
       const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message || "Registration failed");
+      if (!data.user) {
+        throw new Error(data.message || 'Registration failed');
       }
       return data.user;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/check"] });
+    onSuccess: (user: SelectUser) => {
+      queryClient.setQueryData(['/api/auth/check'], { authenticated: true, user });
       toast({
         title: "Registration successful",
-        description: "Your account has been created successfully.",
+        description: "Your account has been created successfully!",
       });
     },
     onError: (error: Error) => {
@@ -87,17 +87,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/auth/logout");
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message || "Logout failed");
-      }
+      await apiRequest("POST", "/api/auth/logout");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/check"] });
+      queryClient.setQueryData(['/api/auth/check'], { authenticated: false, user: null });
       toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
+        title: "Logout successful",
+        description: "You have been logged out successfully.",
       });
     },
     onError: (error: Error) => {
@@ -112,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        user: user ?? null,
+        user: user || null,
         isLoading,
         error,
         loginMutation,
