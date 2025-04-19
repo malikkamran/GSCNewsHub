@@ -1,14 +1,27 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Helmet } from "react-helmet";
-import { Link, useLocation } from "wouter";
-import { Search, Filter, Plus, Edit, Eye, Trash2, CheckCircle, XCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { format } from "date-fns";
+import { 
+  Search, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  ChevronLeft, 
+  ChevronRight,
+  List,
+  Eye,
+  Calendar,
+  Filter,
+  X,
+  StarIcon,
+} from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -18,12 +31,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,39 +61,38 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function ArticlesPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [page, setPage] = useState(1);
   const [location, setLocation] = useLocation();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const perPage = 10;
-
-  // Extract filter from URL if present
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const filter = params.get("filter");
-    if (filter === "featured") {
-      setCategoryFilter("featured");
-    }
-  }, []);
-
-  // Fetch all articles
-  const {
-    data: articles = [],
+  const queryClient = useQueryClient();
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [featuredFilter, setFeaturedFilter] = useState<string>("");
+  
+  // Get all articles with pagination
+  const { 
+    data: articles = [], 
     isLoading: articlesLoading,
     refetch: refetchArticles,
   } = useQuery({
     queryKey: ["/api/articles"],
     retry: false,
   });
-
-  // Fetch all categories for filtering
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+  
+  // Get all categories for filter dropdown
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+  } = useQuery({
     queryKey: ["/api/categories"],
     retry: false,
   });
-
+  
   // Handle delete article
   const handleDeleteArticle = async (id: number) => {
     try {
@@ -95,77 +118,65 @@ export default function ArticlesPage() {
       });
     }
   };
-
-  // Filter articles based on search term and category
-  const filteredArticles = articles.filter((article: any) => {
-    const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         article.summary.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (categoryFilter === "featured") {
-      return matchesSearch && article.featured;
-    } else if (categoryFilter) {
-      return matchesSearch && article.categoryId === parseInt(categoryFilter);
-    }
-    
-    return matchesSearch;
-  });
-
-  // Paginate the filtered articles
-  const paginatedArticles = filteredArticles.slice(
-    (page - 1) * perPage,
-    page * perPage
-  );
-
-  // Calculate total pages
-  const totalPages = Math.ceil(filteredArticles.length / perPage);
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }).format(date);
+  
+  // Create a new article
+  const handleCreateArticle = () => {
+    setLocation("/admin/articles/create");
   };
-
-  // Calculate pagination numbers
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxPagesToShow = 5;
-    
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      // Always show first page
-      pages.push(1);
+  
+  // Edit an article
+  const handleEditArticle = (id: number) => {
+    setLocation(`/admin/articles/edit/${id}`);
+  };
+  
+  // Handle clearing filters
+  const clearFilters = () => {
+    setSearchQuery("");
+    setCategoryFilter("");
+    setFeaturedFilter("");
+  };
+  
+  // Filter articles based on search and category
+  const filteredArticles = articles.filter((article: any) => {
+    const matchesSearch = 
+      !searchQuery || 
+      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      article.summary.toLowerCase().includes(searchQuery.toLowerCase());
       
-      // Determine start and end pages to show
-      let startPage = Math.max(2, page - 1);
-      let endPage = Math.min(totalPages - 1, page + 1);
+    const matchesCategory = 
+      !categoryFilter || 
+      article.categoryId.toString() === categoryFilter;
       
-      // Adjust to show 3 pages in the middle
-      if (startPage === 2) endPage = Math.min(4, totalPages - 1);
-      if (endPage === totalPages - 1) startPage = Math.max(2, totalPages - 3);
+    const matchesFeatured = 
+      featuredFilter === "" ||
+      (featuredFilter === "true" && article.featured) ||
+      (featuredFilter === "false" && !article.featured);
       
-      // Add ellipsis after first page if needed
-      if (startPage > 2) pages.push('...');
-      
-      // Add middle pages
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-      
-      // Add ellipsis before last page if needed
-      if (endPage < totalPages - 1) pages.push('...');
-      
-      // Always show last page
-      pages.push(totalPages);
-    }
-    
-    return pages;
+    return matchesSearch && matchesCategory && matchesFeatured;
+  });
+  
+  // Sort articles by publication date (newest first)
+  const sortedArticles = [...filteredArticles].sort((a: any, b: any) => {
+    return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+  });
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(sortedArticles.length / pageSize);
+  const paginatedArticles = sortedArticles.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+  
+  // Get category name by ID
+  const getCategoryName = (categoryId: number) => {
+    const category = categories.find((c: any) => c.id === categoryId);
+    return category ? category.name : "Unknown";
+  };
+  
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
   };
 
   return (
@@ -177,143 +188,171 @@ export default function ArticlesPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 mb-1">Article Management</h1>
-          <p className="text-gray-600">Manage all news articles</p>
+          <p className="text-gray-600">Manage your news articles</p>
         </div>
-        <Link href="/admin/articles/create">
-          <Button className="bg-[#BB1919] hover:bg-[#A10000]">
-            <Plus className="mr-2 h-4 w-4" />
-            New Article
-          </Button>
-        </Link>
+        <Button 
+          onClick={handleCreateArticle}
+          className="bg-[#BB1919] hover:bg-[#A10000]"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          New Article
+        </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search articles..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="w-full md:w-64">
-          <Select
-            value={categoryFilter}
-            onValueChange={setCategoryFilter}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
-              <SelectItem value="featured">Featured Articles</SelectItem>
-              {categories.map((category: any) => (
-                <SelectItem key={category.id} value={category.id.toString()}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-center">
+            <CardTitle>Filters</CardTitle>
+            {(searchQuery || categoryFilter || featuredFilter) && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 gap-1">
+                <X className="h-4 w-4" />
+                Clear
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Search articles..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+            <div>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Categories</SelectItem>
+                  {categories.map((category: any) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Select value={featuredFilter} onValueChange={setFeaturedFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by featured status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Articles</SelectItem>
+                  <SelectItem value="true">Featured Only</SelectItem>
+                  <SelectItem value="false">Not Featured</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Articles Table */}
-      {articlesLoading ? (
-        <div className="flex justify-center my-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#BB1919]"></div>
-        </div>
-      ) : filteredArticles.length === 0 ? (
-        <div className="bg-white rounded-md shadow p-8 text-center">
-          <h3 className="text-lg font-semibold mb-2">No articles found</h3>
-          <p className="text-gray-500 mb-6">
-            {searchTerm || categoryFilter
-              ? "Try adjusting your search or filter criteria."
-              : "Get started by creating your first article."}
-          </p>
-          <Link href="/admin/articles/create">
-            <Button className="bg-[#BB1919] hover:bg-[#A10000]">
-              <Plus className="mr-2 h-4 w-4" />
-              Create New Article
-            </Button>
-          </Link>
-        </div>
-      ) : (
-        <>
-          <div className="rounded-md border shadow overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10 text-center">ID</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead className="w-32">Category</TableHead>
-                  <TableHead className="w-32">Date</TableHead>
-                  <TableHead className="w-24 text-center">Featured</TableHead>
-                  <TableHead className="w-28 text-center">Views</TableHead>
-                  <TableHead className="w-28 text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedArticles.map((article: any) => {
-                  const category = categories.find(
-                    (c: any) => c.id === article.categoryId
-                  );
-                  
-                  return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Articles</CardTitle>
+          <CardDescription>
+            {filteredArticles.length > 0 
+              ? `Showing ${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, filteredArticles.length)} of ${filteredArticles.length} articles`
+              : "No articles found"
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {articlesLoading || categoriesLoading ? (
+            <div className="flex justify-center my-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#BB1919]"></div>
+            </div>
+          ) : filteredArticles.length === 0 ? (
+            <div className="text-center py-12">
+              <List className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium text-gray-900">No Articles</h3>
+              <p className="mt-2 text-sm text-gray-500">
+                {searchQuery || categoryFilter || featuredFilter
+                  ? "No articles match your search criteria"
+                  : "Get started by creating your first article"
+                }
+              </p>
+              {(searchQuery || categoryFilter || featuredFilter) && (
+                <Button variant="outline" onClick={clearFilters} className="mt-4">
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Published</TableHead>
+                    <TableHead>Views</TableHead>
+                    <TableHead className="w-[100px] text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedArticles.map((article: any) => (
                     <TableRow key={article.id}>
-                      <TableCell className="text-center font-medium">
-                        {article.id}
-                      </TableCell>
                       <TableCell>
-                        <div className="font-medium">{article.title}</div>
-                        <div className="text-sm text-gray-500 truncate max-w-xs">
-                          {article.summary}
+                        <div className="flex flex-col">
+                          <div className="font-medium flex items-center gap-1">
+                            {article.title}
+                            {article.featured && (
+                              <Badge className="ml-1" variant="outline">
+                                <StarIcon className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
+                                Featured
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground truncate max-w-[300px]">
+                            {article.summary}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        {category ? (
-                          <Badge variant="outline" className="bg-gray-100">
-                            {category.name}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-gray-100">
-                            Uncategorized
-                          </Badge>
-                        )}
+                        <Badge variant="secondary" className="font-normal">
+                          {getCategoryName(article.categoryId)}
+                        </Badge>
                       </TableCell>
                       <TableCell>
-                        {formatDate(article.publishedAt)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {article.featured ? (
-                          <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-gray-300 mx-auto" />
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {article.views || 0}
+                        <div className="flex items-center">
+                          <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(article.publishedAt), "MMM d, yyyy")}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex justify-end items-center space-x-1">
-                          <Link href={`/admin/articles/edit/${article.id}`}>
-                            <Button variant="ghost" size="icon" className="text-blue-600 hover:text-blue-800 hover:bg-blue-50">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                          <a
-                            href={`/article/${article.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        <div className="flex items-center">
+                          <Eye className="h-3 w-3 mr-1 text-muted-foreground" />
+                          <span className="text-sm">{article.views}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                            onClick={() => handleEditArticle(article.id)}
                           >
-                            <Button variant="ghost" size="icon" className="text-gray-600 hover:text-gray-800 hover:bg-gray-50">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </a>
+                            <Edit className="h-4 w-4" />
+                          </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-800 hover:bg-red-50">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
@@ -338,57 +377,38 @@ export default function ArticlesPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-between items-center mt-6">
-              <div className="text-sm text-gray-500">
-                Showing {(page - 1) * perPage + 1} to{" "}
-                {Math.min(page * perPage, filteredArticles.length)} of{" "}
-                {filteredArticles.length} articles
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
-                >
-                  Previous
-                </Button>
-                {getPageNumbers().map((pageNum, i) => (
-                  pageNum === '...' ? (
-                    <span key={`ellipsis-${i}`} className="mx-1">...</span>
-                  ) : (
-                    <Button
-                      key={`page-${pageNum}`}
-                      variant={page === pageNum ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setPage(Number(pageNum))}
-                      className={page === pageNum ? "bg-[#BB1919] hover:bg-[#A10000]" : ""}
-                    >
-                      {pageNum}
-                    </Button>
-                  )
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page + 1)}
-                  disabled={page === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
-        </>
-      )}
+        </CardContent>
+        {filteredArticles.length > pageSize && (
+          <CardFooter className="flex justify-between">
+            <div className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
+      </Card>
     </AdminLayout>
   );
 }
