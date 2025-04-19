@@ -42,9 +42,16 @@ export default function Header() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               <Link href="/">
-                <span className="text-[#BB1919] font-roboto font-bold text-2xl md:text-3xl cursor-pointer">
-                  GSC Supply Chain News
-                </span>
+                <div className="flex items-center cursor-pointer">
+                  <img 
+                    src="/assets/gsc-logo.svg" 
+                    alt="GSC News Logo" 
+                    className="h-12 md:h-16"
+                  />
+                  <span className="ml-3 text-[#BB1919] font-roboto font-bold text-lg md:text-2xl">
+                    Supply Chain News
+                  </span>
+                </div>
               </Link>
             </div>
             <div className="hidden md:flex items-center space-x-4">
