@@ -86,7 +86,8 @@ export default function ArticlesPage() {
     queryKey: [statusFilter !== "all" 
       ? `/api/articles?status=${statusFilter}` 
       : "/api/articles"],
-    retry: false
+    retry: false,
+    refetchOnWindowFocus: false
   });
   
   // Fetch categories for filter dropdown
@@ -138,6 +139,14 @@ export default function ArticlesPage() {
   const handleEdit = (id: number) => {
     navigate(`/admin/articles/edit/${id}`);
   };
+
+  // Log received articles and their statuses
+  useEffect(() => {
+    if (articles && articles.length > 0) {
+      console.log("Received articles:", articles.length);
+      console.log("Articles with statuses:", articles.map((a: any) => ({ id: a.id, status: a.status || 'unknown' })));
+    }
+  }, [articles]);
 
   // Filter and sort articles
   const filteredArticles = articles.filter((article: any) => {
@@ -243,7 +252,17 @@ export default function ArticlesPage() {
             </div>
             
             <div className="w-full sm:w-36">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select 
+                value={statusFilter} 
+                onValueChange={(value) => {
+                  setStatusFilter(value);
+                  // When changing status filter, invalidate and refetch
+                  queryClient.invalidateQueries({
+                    queryKey: ["/api/articles"],
+                    exact: false
+                  });
+                }}
+              >
                 <SelectTrigger>
                   <span className="flex items-center">
                     <CheckCircle className="h-4 w-4 mr-2" />
