@@ -144,7 +144,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => handleNavigate("/admin")}
+              onClick={() => handleNavigate("/admin/dashboard")}
               className="text-gray-600 hover:text-gray-900"
             >
               <LayoutDashboard className="h-4 w-4 mr-1" />
