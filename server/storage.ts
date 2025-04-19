@@ -77,6 +77,12 @@ export class MemStorage implements IStorage {
   }
 
   private initializeData() {
+    // Create default admin user
+    this.createUser({
+      username: "admin",
+      password: "admin123"
+    });
+    
     // Create categories matching our navigation menu
     const categoryData: InsertCategory[] = [
       { name: "Logistics", slug: "logistics" },
