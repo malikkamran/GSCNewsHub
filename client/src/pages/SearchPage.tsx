@@ -17,10 +17,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Article } from "@/lib/types";
+import { Article as BaseArticle, Category } from "@/lib/types";
+
+// Extended Article interface with category property added by the search API
+interface ArticleWithCategory extends BaseArticle {
+  category?: Category;
+}
 
 interface SearchResult {
-  articles: Article[];
+  articles: ArticleWithCategory[];
   total: number;
 }
 
@@ -138,7 +143,7 @@ export default function SearchPage() {
                     </CardContent>
                   </Card>
                 ))
-              ) : query && searchResults?.articles?.length > 0 ? (
+              ) : query && searchResults && searchResults.articles && searchResults.articles.length > 0 ? (
                 // Search results
                 searchResults.articles.map((article) => (
                   <Card key={article.id} className="overflow-hidden hover:shadow-md transition-shadow">
@@ -164,12 +169,22 @@ export default function SearchPage() {
                           </span>
                           <span className="flex items-center">
                             <Tag className="h-4 w-4 mr-1" />
-                            <Badge 
-                              variant="outline" 
-                              className="bg-[#BB1919] text-white hover:bg-[#A00000]"
-                            >
-                              {article.categoryId}
-                            </Badge>
+                            {article.category ? (
+                              <Badge 
+                                variant="outline" 
+                                className="bg-[#BB1919] text-white hover:bg-[#A00000] cursor-pointer"
+                                onClick={() => article.category?.slug && setLocation(`/category/${article.category.slug}`)}
+                              >
+                                {article.category?.name || "Category"}
+                              </Badge>
+                            ) : (
+                              <Badge 
+                                variant="outline" 
+                                className="bg-gray-500 text-white"
+                              >
+                                Uncategorized
+                              </Badge>
+                            )}
                           </span>
                         </div>
                         
