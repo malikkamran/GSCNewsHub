@@ -452,6 +452,10 @@ export class MemStorage implements IStorage {
       (article) => article.slug === slug,
     );
   }
+  
+  async getArticle(id: number): Promise<Article | undefined> {
+    return this.articles.get(id);
+  }
 
   async getFeaturedArticles(limit: number = 1): Promise<Article[]> {
     return Array.from(this.articles.values())
@@ -477,6 +481,36 @@ export class MemStorage implements IStorage {
     };
     this.articles.set(id, article);
     return article;
+  }
+  
+  async updateArticle(id: number, insertArticle: InsertArticle): Promise<Article | undefined> {
+    const existingArticle = this.articles.get(id);
+    
+    if (!existingArticle) {
+      return undefined;
+    }
+    
+    const updatedArticle: Article = { 
+      ...insertArticle, 
+      id,
+      views: existingArticle.views || 0,
+      featured: insertArticle.featured || false,
+      publishedAt: insertArticle.publishedAt || existingArticle.publishedAt
+    };
+    
+    this.articles.set(id, updatedArticle);
+    return updatedArticle;
+  }
+  
+  async deleteArticle(id: number): Promise<boolean> {
+    const exists = this.articles.has(id);
+    
+    if (exists) {
+      this.articles.delete(id);
+      return true;
+    }
+    
+    return false;
   }
 
   async incrementArticleViews(id: number): Promise<Article | undefined> {

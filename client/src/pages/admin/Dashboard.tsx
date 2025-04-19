@@ -1,152 +1,267 @@
-import { Helmet } from "react-helmet";
-import AdminLayout from "@/components/admin/AdminLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, FolderPlus, Users, Eye, TrendingUp } from "lucide-react";
-import { Link } from "wouter";
+import { Helmet } from "react-helmet";
+import { ChevronRight, Edit, Eye, BarChart3, Users, FileText, Newspaper } from "lucide-react";
+import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function AdminDashboard() {
-  // Get articles count
-  const { data: articlesData } = useQuery({
+  const { toast } = useToast();
+
+  // Fetch articles
+  const { data: articles = [], isLoading: articlesLoading } = useQuery({
     queryKey: ["/api/articles"],
     retry: false,
   });
-  
-  // Get categories count
-  const { data: categoriesData } = useQuery({
+
+  // Fetch categories
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["/api/categories"],
     retry: false,
   });
-  
-  const stats = [
-    {
-      title: "Total Articles",
-      value: articlesData?.length || 0,
-      icon: <FileText className="h-6 w-6" />,
-      color: "bg-blue-50 text-blue-700",
-      link: "/admin/articles",
-    },
-    {
-      title: "Categories",
-      value: categoriesData?.length || 0,
-      icon: <FolderPlus className="h-6 w-6" />,
-      color: "bg-green-50 text-green-700",
-      link: "/admin/categories",
-    },
-    {
-      title: "Admin Users",
-      value: 2,
-      icon: <Users className="h-6 w-6" />,
-      color: "bg-purple-50 text-purple-700",
-      link: "/admin/users",
-    },
-    {
-      title: "Page Views",
-      value: "12.5K",
-      icon: <Eye className="h-6 w-6" />,
-      color: "bg-amber-50 text-amber-700",
-      link: "/admin/analytics",
-    },
-  ];
-  
+
+  // Calculate dashboard stats
+  const totalArticles = articles.length || 0;
+  const featuredArticles = articles.filter((article: any) => article.featured).length || 0;
+  const totalCategories = categories.length || 0;
+
+  // Get recent articles
+  const recentArticles = [...articles]
+    .sort((a: any, b: any) => 
+      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    )
+    .slice(0, 5);
+
   // Get most viewed articles
-  const { data: mostViewedArticles } = useQuery({
-    queryKey: ["/api/articles/most-viewed"],
-    retry: false,
-  });
-  
+  const mostViewedArticles = [...articles]
+    .sort((a: any, b: any) => (b.views || 0) - (a.views || 0))
+    .slice(0, 5);
+
+  // Format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }).format(date);
+  };
+
   return (
     <AdminLayout>
       <Helmet>
         <title>Dashboard | GSC Supply Chain News CMS</title>
       </Helmet>
-      
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-1">Dashboard</h1>
-        <p className="text-gray-600">Welcome to the GSC News content management system.</p>
+
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">Dashboard</h1>
+          <p className="text-gray-600">Welcome to the GSC Supply Chain News CMS</p>
+        </div>
+        <Link href="/admin/articles/create">
+          <Button className="bg-[#BB1919] hover:bg-[#A10000]">
+            New Article
+          </Button>
+        </Link>
       </div>
-      
-      {/* Stats grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
-          <Card key={stat.title} className="border-none shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <div className={`p-2 rounded-md ${stat.color}`}>{stat.icon}</div>
-                <Link href={stat.link}>
-                  <Button variant="ghost" size="sm" className="text-gray-500 hover:text-[#BB1919]">View</Button>
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{stat.value}</div>
-              <p className="text-sm text-gray-500 mt-1">{stat.title}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent activity */}
+
+      {/* Quick Stats */}
+      <div className="grid gap-6 mb-8 md:grid-cols-2 xl:grid-cols-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest actions in the CMS</CardDescription>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Total Articles</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex items-center gap-4 py-2 border-b last:border-b-0">
-                  <div className="bg-green-50 p-2 rounded-full">
-                    <FileText className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Article "{i === 1 ? 'Red Sea Crisis Impact' : i === 2 ? 'Supply Chain Resilience' : i === 3 ? 'Sustainable Logistics' : 'Warehousing Trends'}" was {i % 2 === 0 ? 'edited' : 'created'}</p>
-                    <p className="text-xs text-gray-500">{i === 1 ? '2 minutes' : i === 2 ? '3 hours' : i === 3 ? 'Yesterday' : '2 days'} ago by Admin</p>
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center">
+              <FileText className="h-9 w-9 text-[#BB1919] mr-3" />
+              <div className="text-3xl font-bold">{totalArticles}</div>
             </div>
           </CardContent>
+          <CardFooter className="pt-0">
+            <Link href="/admin/articles">
+              <Button variant="ghost" className="text-[#BB1919] hover:text-[#A10000] p-0">
+                View all
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardFooter>
         </Card>
 
-        {/* Most viewed articles */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Featured Articles</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <Newspaper className="h-9 w-9 text-[#BB1919] mr-3" />
+              <div className="text-3xl font-bold">{featuredArticles}</div>
+            </div>
+          </CardContent>
+          <CardFooter className="pt-0">
+            <Link href="/admin/articles?filter=featured">
+              <Button variant="ghost" className="text-[#BB1919] hover:text-[#A10000] p-0">
+                View featured
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Categories</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <FileText className="h-9 w-9 text-[#BB1919] mr-3" />
+              <div className="text-3xl font-bold">{totalCategories}</div>
+            </div>
+          </CardContent>
+          <CardFooter className="pt-0">
+            <Link href="/admin/categories">
+              <Button variant="ghost" className="text-[#BB1919] hover:text-[#A10000] p-0">
+                Manage categories
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Analytics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <BarChart3 className="h-9 w-9 text-[#BB1919] mr-3" />
+              <div className="text-3xl font-bold">-</div>
+            </div>
+          </CardContent>
+          <CardFooter className="pt-0">
+            <Button variant="ghost" className="text-[#BB1919] hover:text-[#A10000] p-0">
+              Coming soon
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 mb-8 md:grid-cols-2">
+        {/* Recent Articles */}
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle>Most Viewed Articles</CardTitle>
-                <CardDescription>Articles with highest view counts</CardDescription>
-              </div>
-              <TrendingUp className="h-4 w-4 text-[#BB1919]" />
-            </div>
+            <CardTitle>Recent Articles</CardTitle>
+            <CardDescription>Latest published content</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mostViewedArticles?.slice(0, 5).map((article: any, index: number) => (
-                <div key={article.id} className="flex items-center gap-4 py-2 border-b last:border-b-0">
-                  <div className="bg-gray-100 text-gray-800 flex items-center justify-center w-8 h-8 rounded-full font-bold">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium line-clamp-1">{article.title}</p>
-                    <div className="flex items-center mt-1">
-                      <Eye className="h-3 w-3 text-gray-500 mr-1" />
-                      <p className="text-xs text-gray-500">{article.views || 0} views</p>
+              {articlesLoading ? (
+                <p className="text-sm text-gray-500">Loading...</p>
+              ) : recentArticles.length > 0 ? (
+                recentArticles.slice(0, 5).map((article: any) => (
+                  <div key={article.id} className="flex items-start space-x-3">
+                    <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center">
+                      <FileText className="h-6 w-6 text-gray-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{article.title}</p>
+                      <div className="flex items-center text-sm text-gray-500 space-x-1">
+                        <span>{formatDate(article.publishedAt)}</span>
+                        <span>•</span>
+                        <span>{categories.find((c: any) => c.id === article.categoryId)?.name || 'Uncategorized'}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Link href={`/admin/articles/edit/${article.id}`}>
+                        <Button variant="ghost" size="icon">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <a href={`/article/${article.slug}`} target="_blank" rel="noopener noreferrer">
+                        <Button variant="ghost" size="icon">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </a>
                     </div>
                   </div>
-                  <Link href={`/admin/articles/edit/${article.id}`}>
-                    <a className="text-xs font-medium text-[#BB1919] hover:underline">Edit</a>
-                  </Link>
-                </div>
-              ))}
-              
-              {!mostViewedArticles?.length && (
-                <p className="text-sm text-gray-500 py-4 text-center">No articles found</p>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No articles published yet.</p>
               )}
             </div>
           </CardContent>
+          <CardFooter>
+            <Link href="/admin/articles">
+              <Button variant="outline">View All Articles</Button>
+            </Link>
+          </CardFooter>
+        </Card>
+
+        {/* Most Viewed Articles */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Most Viewed Articles</CardTitle>
+            <CardDescription>Articles with highest view counts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {articlesLoading ? (
+                <p className="text-sm text-gray-500">Loading...</p>
+              ) : mostViewedArticles.length > 0 ? (
+                mostViewedArticles.map((article: any) => (
+                  <div key={article.id} className="flex items-start space-x-3">
+                    <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center">
+                      <FileText className="h-6 w-6 text-gray-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{article.title}</p>
+                      <div className="flex items-center text-sm text-gray-500 space-x-1">
+                        <span>{article.views || 0} views</span>
+                        <span>•</span>
+                        <span>{categories.find((c: any) => c.id === article.categoryId)?.name || 'Uncategorized'}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Link href={`/admin/articles/edit/${article.id}`}>
+                        <Button variant="ghost" size="icon">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <a href={`/article/${article.slug}`} target="_blank" rel="noopener noreferrer">
+                        <Button variant="ghost" size="icon">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </a>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No viewed articles yet.</p>
+              )}
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                toast({
+                  title: "Analytics coming soon",
+                  description: "Detailed analytics will be available in a future update.",
+                });
+              }}
+            >
+              View Analytics
+            </Button>
+          </CardFooter>
         </Card>
       </div>
     </AdminLayout>
