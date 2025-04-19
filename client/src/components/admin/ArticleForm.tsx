@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
-import { ChevronLeft, Save, Loader2, Check, Calendar } from "lucide-react";
+import { ChevronLeft, Save, Loader2, Check, Calendar, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Card,
   CardContent,
@@ -60,6 +70,8 @@ interface ArticleFormProps {
 export default function ArticleForm({ articleId }: ArticleFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showFeaturedDialog, setShowFeaturedDialog] = useState(false);
+  const [pendingFeaturedValue, setPendingFeaturedValue] = useState(false);
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
