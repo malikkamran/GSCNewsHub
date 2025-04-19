@@ -14,7 +14,8 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
-  Check,
+  Check, 
+  CheckCircle,
   X,
   ArrowUpDown,
   BarChart,
@@ -241,7 +242,7 @@ export default function ArticlesPage() {
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <span className="flex items-center">
-                    <FileCheck className="h-4 w-4 mr-2" />
+                    <CheckCircle className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Status" />
                   </span>
                 </SelectTrigger>
@@ -275,7 +276,7 @@ export default function ArticlesPage() {
         </div>
         
         {/* Filter summary and reset */}
-        {(searchTerm || categoryFilter !== "all" || sortBy !== "newest") && (
+        {(searchTerm || categoryFilter !== "all" || statusFilter !== "all" || sortBy !== "newest") && (
           <div className="mt-4 flex items-center gap-2 text-sm">
             <div className="text-gray-500">Filters:</div>
             
@@ -292,6 +293,15 @@ export default function ArticlesPage() {
               <Badge variant="outline" className="gap-1">
                 Category: {getCategoryName(parseInt(categoryFilter, 10))}
                 <button onClick={() => setCategoryFilter("all")}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            
+            {statusFilter !== "all" && (
+              <Badge variant="outline" className="gap-1">
+                Status: {statusFilter === "published" ? "Published" : "Draft"}
+                <button onClick={() => setStatusFilter("all")}>
                   <X className="h-3 w-3" />
                 </button>
               </Badge>
@@ -319,6 +329,7 @@ export default function ArticlesPage() {
               onClick={() => {
                 setSearchTerm("");
                 setCategoryFilter("all");
+                setStatusFilter("all");
                 setSortBy("newest");
               }}
             >
@@ -342,16 +353,17 @@ export default function ArticlesPage() {
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No articles found</h3>
               <p className="text-gray-500 mb-4">
-                {searchTerm || categoryFilter !== "all" ? 
+                {searchTerm || categoryFilter !== "all" || statusFilter !== "all" ? 
                   "No articles match your search criteria. Try adjusting your filters." : 
                   "You haven't created any articles yet."}
               </p>
-              {searchTerm || categoryFilter !== "all" ? (
+              {searchTerm || categoryFilter !== "all" || statusFilter !== "all" ? (
                 <Button
                   variant="outline"
                   onClick={() => {
                     setSearchTerm("");
                     setCategoryFilter("all");
+                    setStatusFilter("all");
                     setSortBy("newest");
                   }}
                 >
