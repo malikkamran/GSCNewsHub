@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Helmet } from "react-helmet";
-import { useLocation } from "wouter";
+import { format } from "date-fns";
+import { ChevronLeft, Save, Loader2, Check, Calendar } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -19,7 +20,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -35,20 +36,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 
-// Create a validation schema for articles
+// Create a schema for article form
 const articleSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
-  slug: z.string().min(3, "Slug must be at least 3 characters").regex(/^[a-z0-9-]+$/, {
+  slug: z.string().min(5, "Slug must be at least 5 characters").regex(/^[a-z0-9-]+$/, {
     message: "Slug can only contain lowercase letters, numbers, and hyphens",
   }),
-  summary: z.string().min(10, "Summary must be at least 10 characters"),
+  summary: z.string().min(10, "Summary must be at least 10 characters").max(200, "Summary cannot exceed 200 characters"),
   content: z.string().min(50, "Content must be at least 50 characters"),
-  imageUrl: z.string().url("Please enter a valid URL"),
-  categoryId: z.coerce.number(),
+  imageUrl: z.string().url("Must be a valid URL"),
+  categoryId: z.coerce.number().min(1, "Please select a category"),
   featured: z.boolean().default(false),
-  publishedAt: z.date().optional().default(() => new Date()),
 });
 
 type ArticleFormValues = z.infer<typeof articleSchema>;
@@ -59,25 +58,21 @@ interface ArticleFormProps {
 
 export default function ArticleForm({ articleId }: ArticleFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [_, setLocation] = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const isEditMode = !!articleId;
-
-  // Fetch categories for the select dropdown
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+  
+  // Get all categories for dropdown
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+  } = useQuery({
     queryKey: ["/api/categories"],
     retry: false,
   });
 
-  // Fetch article details if in edit mode
-  const { data: article, isLoading: articleLoading } = useQuery({
-    queryKey: [`/api/articles/${articleId}`],
-    retry: false,
-    enabled: isEditMode,
-  });
-
-  // Set up form with validation
+  // Create form with validation
   const form = useForm<ArticleFormValues>({
     resolver: zodResolver(articleSchema),
     defaultValues: {
@@ -86,25 +81,45 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
       summary: "",
       content: "",
       imageUrl: "",
-      categoryId: undefined,
+      categoryId: 0,
       featured: false,
     },
   });
 
-  // Load article data into form when it's available
+  // Fetch article data when editing
   useEffect(() => {
-    if (article && isEditMode) {
-      form.reset({
-        title: article.title,
-        slug: article.slug,
-        summary: article.summary,
-        content: article.content,
-        imageUrl: article.imageUrl,
-        categoryId: article.categoryId,
-        featured: article.featured,
-      });
+    async function fetchArticle() {
+      if (!articleId) return;
+      
+      setIsLoading(true);
+      try {
+        const article = await apiRequest(`/api/articles/${articleId}`);
+        
+        if (article) {
+          form.reset({
+            title: article.title,
+            slug: article.slug,
+            summary: article.summary,
+            content: article.content,
+            imageUrl: article.imageUrl,
+            categoryId: article.categoryId,
+            featured: article.featured,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching article:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load article data. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, [article, form, isEditMode]);
+
+    fetchArticle();
+  }, [articleId, form, toast]);
 
   // Generate slug from title
   const generateSlug = (title: string) => {
@@ -132,7 +147,7 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
     setIsSubmitting(true);
 
     try {
-      if (isEditMode) {
+      if (articleId) {
         // Update existing article
         await apiRequest(`/api/articles/${articleId}`, {
           method: "PATCH",
@@ -162,7 +177,7 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
       });
 
       // Redirect to articles list
-      setLocation("/admin/articles");
+      navigate("/admin/articles");
     } catch (error) {
       console.error("Error submitting article:", error);
       toast({
@@ -175,23 +190,26 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
     }
   };
 
-  const isLoading = categoriesLoading || (isEditMode && articleLoading);
+  // Go back to articles list
+  const handleCancel = () => {
+    navigate("/admin/articles");
+  };
 
   return (
     <div>
-      <Helmet>
-        <title>{isEditMode ? "Edit Article" : "Create Article"} | GSC Supply Chain News CMS</title>
-      </Helmet>
-
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-1">
-          {isEditMode ? "Edit Article" : "Create Article"}
-        </h1>
-        <p className="text-gray-600">
-          {isEditMode
-            ? "Update article details and content"
-            : "Add a new article to the site"}
-        </p>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">
+            {articleId ? "Edit Article" : "Create New Article"}
+          </h1>
+          <p className="text-gray-600">
+            {articleId ? "Update existing article content and metadata" : "Publish a new article on the site"}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleCancel}>
+          <ChevronLeft className="h-4 w-4 mr-2" />
+          Back to Articles
+        </Button>
       </div>
 
       {isLoading ? (
@@ -199,16 +217,15 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#BB1919]"></div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main form */}
-          <div className="lg:col-span-3">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-2 space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Article Content</CardTitle>
+                    <CardTitle>Content</CardTitle>
                     <CardDescription>
-                      Enter the main content and details for this article
+                      Create the main content for your article
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -217,10 +234,10 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                       name="title"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Title</FormLabel>
+                          <FormLabel>Article Title</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="Enter article title..."
+                              placeholder="Enter a descriptive title"
                               {...field}
                               onChange={handleTitleChange}
                             />
@@ -235,15 +252,15 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                       name="slug"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Slug</FormLabel>
+                          <FormLabel>URL Slug</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="enter-url-slug..."
+                              placeholder="url-friendly-slug"
                               {...field}
                             />
                           </FormControl>
                           <FormDescription>
-                            This will be used in the article URL
+                            This will be used for the article URL. Auto-generated from title.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -258,13 +275,15 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                           <FormLabel>Summary</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Brief summary of the article..."
-                              className="resize-y min-h-[80px]"
+                              placeholder="Brief summary of the article (appears in previews)"
+                              className="resize-none h-20"
                               {...field}
                             />
                           </FormControl>
                           <FormDescription>
-                            A short preview shown in article listings
+                            <span className={field.value.length > 200 ? "text-red-500" : "text-gray-500"}>
+                              {field.value.length}/200 characters
+                            </span>
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -279,8 +298,8 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                           <FormLabel>Content</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Full article content..."
-                              className="resize-y min-h-[300px]"
+                              placeholder="Write your article content here..."
+                              className="resize-none min-h-[300px]"
                               {...field}
                             />
                           </FormControl>
@@ -290,48 +309,17 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                     />
                   </CardContent>
                 </Card>
+              </div>
 
+              <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Article Settings</CardTitle>
+                    <CardTitle>Metadata</CardTitle>
                     <CardDescription>
-                      Configure additional article properties
+                      Article settings and categorization
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="categoryId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Category</FormLabel>
-                          <Select
-                            value={field.value?.toString() || ""}
-                            onValueChange={(value) => {
-                              field.onChange(Number(value));
-                            }}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a category" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {categories.map((category: any) => (
-                                <SelectItem
-                                  key={category.id}
-                                  value={category.id.toString()}
-                                >
-                                  {category.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
                     <FormField
                       control={form.control}
                       name="imageUrl"
@@ -345,8 +333,36 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                             />
                           </FormControl>
                           <FormDescription>
-                            Enter the URL of the featured image
+                            URL to the main image for this article
                           </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="categoryId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Category</FormLabel>
+                          <Select
+                            onValueChange={(value) => field.onChange(parseInt(value, 10))}
+                            value={field.value ? field.value.toString() : undefined}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {categories.map((category: any) => (
+                                <SelectItem key={category.id} value={category.id.toString()}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -356,81 +372,88 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                       control={form.control}
                       name="featured"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Featured Article</FormLabel>
+                            <FormDescription>
+                              Featured articles appear prominently on the homepage
+                            </FormDescription>
+                          </div>
                           <FormControl>
-                            <Checkbox
+                            <Switch
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Featured Article</FormLabel>
-                            <FormDescription>
-                              This article will be highlighted on the homepage
-                            </FormDescription>
-                          </div>
                         </FormItem>
                       )}
                     />
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setLocation("/admin/articles")}
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="submit"
-                      className="bg-[#BB1919] hover:bg-[#A10000]"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Check className="h-4 w-4 mr-2" />
-                      )}
-                      {isEditMode ? "Update Article" : "Create Article"}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </form>
-            </Form>
-          </div>
 
-          {/* Side panel */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tips</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm space-y-4">
-                  <div>
-                    <h3 className="font-medium">Writing Guidelines</h3>
-                    <p className="text-gray-500 mt-1">
-                      Keep headlines clear and concise. Use active voice and focus on key facts.
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium">SEO Best Practices</h3>
-                    <p className="text-gray-500 mt-1">
-                      Include relevant keywords naturally in your title, summary, and content.
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium">Featured Articles</h3>
-                    <p className="text-gray-500 mt-1">
-                      Featured articles appear prominently on the homepage. Use this for important breaking news.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                    {articleId && (
+                      <div className="flex items-center space-x-2 text-sm text-gray-500 mt-4">
+                        <Calendar className="h-4 w-4" />
+                        <span>Published: {format(new Date(), "MMM d, yyyy")}</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Image Preview</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {form.watch("imageUrl") ? (
+                      <div className="aspect-video w-full overflow-hidden rounded-md">
+                        <img
+                          src={form.watch("imageUrl")}
+                          alt="Article preview"
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = "https://placehold.co/600x400?text=Invalid+Image+URL";
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="aspect-video w-full overflow-hidden rounded-md bg-gray-100 flex items-center justify-center">
+                        <span className="text-gray-400">No image URL provided</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-[#BB1919] hover:bg-[#A10000]"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {articleId ? "Updating..." : "Creating..."}
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    <Save className="mr-2 h-4 w-4" />
+                    {articleId ? "Update Article" : "Create Article"}
+                  </span>
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
       )}
     </div>
   );

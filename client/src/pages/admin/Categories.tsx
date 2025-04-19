@@ -1,12 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Helmet } from "react-helmet";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Edit, Trash2, Check, X, Pencil } from "lucide-react";
+import {
+  Folder,
+  FolderOpen,
+  Plus,
+  Edit,
+  Trash2,
+  Check,
+  X,
+  FileText,
+  Loader2,
+  Save,
+} from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +39,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -35,19 +54,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
-// Create a schema for categories
+// Category form schema
 const categorySchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   slug: z.string().min(2, "Slug must be at least 2 characters").regex(/^[a-z0-9-]+$/, {
@@ -58,22 +67,42 @@ const categorySchema = z.object({
 type CategoryFormValues = z.infer<typeof categorySchema>;
 
 export default function CategoriesPage() {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editCategoryId, setEditCategoryId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [articleCountByCategory, setArticleCountByCategory] = useState<Record<number, number>>({});
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch all categories
+  // Fetch categories
   const {
     data: categories = [],
-    isLoading: categoriesLoading,
+    isLoading,
     refetch: refetchCategories,
   } = useQuery({
     queryKey: ["/api/categories"],
     retry: false,
   });
 
-  // Set up form with validation
+  // Fetch article counts for each category
+  const {
+    data: articles = [],
+  } = useQuery({
+    queryKey: ["/api/articles"],
+    retry: false,
+    onSuccess: (data) => {
+      const countMap: Record<number, number> = {};
+      data.forEach((article: any) => {
+        countMap[article.categoryId] = (countMap[article.categoryId] || 0) + 1;
+      });
+      setArticleCountByCategory(countMap);
+    },
+  });
+
+  // Form setup
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
@@ -82,7 +111,7 @@ export default function CategoriesPage() {
     },
   });
 
-  // Generate slug from name
+  // Generate slug from category name
   const generateSlug = (name: string) => {
     return name
       .toLowerCase()
@@ -103,32 +132,14 @@ export default function CategoriesPage() {
     }
   };
 
-  // Set form values when editing a category
-  useEffect(() => {
-    if (editingCategoryId !== null) {
-      const category = categories.find((c: any) => c.id === editingCategoryId);
-      if (category) {
-        form.reset({
-          name: category.name,
-          slug: category.slug,
-        });
-      }
-    } else {
-      form.reset({
-        name: "",
-        slug: "",
-      });
-    }
-  }, [editingCategoryId, categories, form]);
-
-  // Handle form submission for create/update
+  // Create or update category
   const onSubmit = async (data: CategoryFormValues) => {
     setIsSubmitting(true);
 
     try {
-      if (editingCategoryId !== null) {
+      if (isEditing && editCategoryId) {
         // Update existing category
-        await apiRequest(`/api/categories/${editingCategoryId}`, {
+        await apiRequest(`/api/categories/${editCategoryId}`, {
           method: "PATCH",
           body: JSON.stringify(data),
         });
@@ -150,14 +161,15 @@ export default function CategoriesPage() {
         });
       }
 
-      // Reset form and refresh data
+      // Reset form and state
       form.reset({
         name: "",
         slug: "",
       });
-      setEditingCategoryId(null);
-      
-      // Invalidate queries to refresh data
+      setIsEditing(false);
+      setEditCategoryId(null);
+
+      // Refresh categories
       queryClient.invalidateQueries({
         queryKey: ["/api/categories"],
       });
@@ -173,22 +185,38 @@ export default function CategoriesPage() {
     }
   };
 
-  // Handle delete category
-  const handleDeleteCategory = async (id: number) => {
+  // Edit a category
+  const handleEdit = (id: number) => {
+    const category = categories.find((c: any) => c.id === id);
+    if (category) {
+      setIsEditing(true);
+      setEditCategoryId(id);
+      form.reset({
+        name: category.name,
+        slug: category.slug,
+      });
+    }
+  };
+
+  // Delete a category
+  const handleDelete = async (id: number) => {
     try {
       await apiRequest(`/api/categories/${id}`, {
         method: "DELETE",
-      });
-      
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({
-        queryKey: ["/api/categories"],
       });
       
       toast({
         title: "Category deleted",
         description: "The category has been successfully deleted.",
       });
+      
+      // Refresh categories
+      queryClient.invalidateQueries({
+        queryKey: ["/api/categories"],
+      });
+      
+      setShowDeleteDialog(false);
+      setCategoryToDelete(null);
     } catch (error) {
       console.error("Error deleting category:", error);
       toast({
@@ -199,9 +227,16 @@ export default function CategoriesPage() {
     }
   };
 
+  // Confirm category deletion
+  const confirmDelete = (id: number) => {
+    setCategoryToDelete(id);
+    setShowDeleteDialog(true);
+  };
+
   // Cancel editing
-  const handleCancelEdit = () => {
-    setEditingCategoryId(null);
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditCategoryId(null);
     form.reset({
       name: "",
       slug: "",
@@ -214,25 +249,21 @@ export default function CategoriesPage() {
         <title>Categories | GSC Supply Chain News CMS</title>
       </Helmet>
 
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-1">Category Management</h1>
-          <p className="text-gray-600">Manage article categories</p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-1">Categories</h1>
+        <p className="text-gray-600">Manage content categories for your articles</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Category Form */}
-        <div className="md:col-span-1">
+        <div className="md:col-span-1 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>
-                {editingCategoryId !== null ? "Edit Category" : "Add New Category"}
-              </CardTitle>
+              <CardTitle>{isEditing ? "Edit Category" : "Create Category"}</CardTitle>
               <CardDescription>
-                {editingCategoryId !== null
-                  ? "Update existing category details"
-                  : "Create a new content category"}
+                {isEditing 
+                  ? "Update an existing category" 
+                  : "Create a new category for your articles"}
               </CardDescription>
             </CardHeader>
             <Form {...form}>
@@ -246,25 +277,28 @@ export default function CategoriesPage() {
                         <FormLabel>Category Name</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="E.g., Logistics, Warehousing"
+                            placeholder="Enter category name"
                             {...field}
                             onChange={handleNameChange}
                           />
                         </FormControl>
+                        <FormDescription>
+                          Displayed name for the category
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="slug"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category Slug</FormLabel>
+                        <FormLabel>URL Slug</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="e-g-logistics-warehousing"
+                            placeholder="url-friendly-slug"
                             {...field}
                           />
                         </FormControl>
@@ -277,39 +311,82 @@ export default function CategoriesPage() {
                   />
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                  {editingCategoryId !== null && (
+                  {isEditing ? (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={cancelEdit}
+                        disabled={isSubmitting}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="bg-[#BB1919] hover:bg-[#A10000]"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <span className="flex items-center">
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Updating...
+                          </span>
+                        ) : (
+                          <span className="flex items-center">
+                            <Save className="mr-2 h-4 w-4" />
+                            Update Category
+                          </span>
+                        )}
+                      </Button>
+                    </>
+                  ) : (
                     <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleCancelEdit}
+                      type="submit"
+                      className="w-full bg-[#BB1919] hover:bg-[#A10000]"
+                      disabled={isSubmitting}
                     >
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
+                      {isSubmitting ? (
+                        <span className="flex items-center">
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </span>
+                      ) : (
+                        <span className="flex items-center">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Create Category
+                        </span>
+                      )}
                     </Button>
                   )}
-                  <Button 
-                    type="submit"
-                    className="bg-[#BB1919] hover:bg-[#A10000] ml-auto"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {editingCategoryId !== null ? "Updating..." : "Creating..."}
-                      </span>
-                    ) : (
-                      <span className="flex items-center">
-                        <Check className="h-4 w-4 mr-2" />
-                        {editingCategoryId !== null ? "Update Category" : "Add Category"}
-                      </span>
-                    )}
-                  </Button>
                 </CardFooter>
               </form>
             </Form>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>About Categories</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-gray-500">
+              <p>
+                Categories help organize your content and make it easier for readers to find related articles.
+              </p>
+              <p>
+                Each category has a name (displayed to users) and a slug (used in URLs).
+              </p>
+              <div className="flex items-start space-x-2 mt-4">
+                <div className="bg-amber-100 text-amber-800 p-2 rounded-md">
+                  <FolderOpen className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-amber-800 font-medium">Important Note</p>
+                  <p className="text-xs mt-1">
+                    Deleting a category that has articles will cause those articles to become uncategorized.
+                    Consider editing the category instead of deleting it.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </div>
 
@@ -317,93 +394,123 @@ export default function CategoriesPage() {
         <div className="md:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Categories</CardTitle>
+              <CardTitle>All Categories</CardTitle>
               <CardDescription>
-                All available content categories
+                Manage your existing content categories
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {categoriesLoading ? (
-                <div className="flex justify-center my-6">
+              {isLoading ? (
+                <div className="flex justify-center my-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#BB1919]"></div>
                 </div>
-              ) : categories.length === 0 ? (
-                <div className="text-center py-8">
-                  <h3 className="text-lg font-medium text-gray-800 mb-2">No categories found</h3>
-                  <p className="text-gray-500">Create your first category to organize your content.</p>
-                </div>
               ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Slug</TableHead>
-                        <TableHead className="w-[100px] text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {categories.map((category: any) => (
-                        <TableRow key={category.id}>
-                          <TableCell className="font-medium">
-                            {category.name}
-                          </TableCell>
-                          <TableCell>
-                            <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm text-gray-500">
-                              {category.slug}
-                            </code>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                                onClick={() => setEditingCategoryId(category.id)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
+                <>
+                  {categories.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="inline-flex items-center justify-center rounded-full bg-gray-100 p-3 mb-4">
+                        <Folder className="h-6 w-6 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No categories yet</h3>
+                      <p className="text-gray-500 max-w-md mx-auto mb-4">
+                        Create your first category to organize your articles. Categories help readers navigate and find related content.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-hidden border border-gray-200 rounded-md">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Slug</TableHead>
+                            <TableHead>Articles</TableHead>
+                            <TableHead className="w-[100px] text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {categories.map((category: any) => (
+                            <TableRow key={category.id}>
+                              <TableCell className="font-medium">{category.name}</TableCell>
+                              <TableCell>
+                                <code className="bg-gray-100 px-1 py-0.5 rounded text-xs">
+                                  {category.slug}
+                                </code>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={articleCountByCategory[category.id] ? "default" : "outline"}>
+                                  <span className="flex items-center">
+                                    <FileText className="h-3 w-3 mr-1" />
+                                    {articleCountByCategory[category.id] || 0}
+                                  </span>
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end space-x-2">
+                                  <Button 
+                                    variant="ghost" 
                                     size="icon"
-                                    className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                                    onClick={() => handleEdit(category.id)}
+                                    disabled={isSubmitting}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => confirmDelete(category.id)}
+                                    disabled={isSubmitting}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Category</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete this category? This action cannot be undone.
-                                      Articles with this category will not be displayed correctly.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteCategory(category.id)}
-                                      className="bg-red-600 hover:bg-red-700 text-white"
-                                    >
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Category</DialogTitle>
+            <DialogDescription>
+              {categoryToDelete && articleCountByCategory[categoryToDelete] ? (
+                <span className="text-amber-600">
+                  Warning: This category has {articleCountByCategory[categoryToDelete]} article(s). 
+                  Deleting it will leave these articles uncategorized.
+                </span>
+              ) : (
+                "Are you sure you want to delete this category? This action cannot be undone."
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => categoryToDelete && handleDelete(categoryToDelete)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Category
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }

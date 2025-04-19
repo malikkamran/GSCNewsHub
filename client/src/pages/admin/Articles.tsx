@@ -3,23 +3,25 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Helmet } from "react-helmet";
 import { format } from "date-fns";
-import { 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  ChevronLeft, 
-  ChevronRight,
-  List,
+import {
+  FileText,
+  Search,
+  Edit,
+  Trash2,
+  Star,
+  Plus,
   Eye,
-  Calendar,
   Filter,
+  ChevronLeft,
+  ChevronRight,
+  Check,
   X,
-  StarIcon,
+  ArrowUpDown,
+  BarChart,
 } from "lucide-react";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,52 +33,51 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 export default function ArticlesPage() {
-  const [location, setLocation] = useLocation();
+  // State for UI and filtering
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<string>("newest");
+  const [articleToDelete, setArticleToDelete] = useState<number | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  const itemsPerPage = 10;
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, categoryFilter, sortBy]);
   
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
-  
-  // Filter state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("");
-  const [featuredFilter, setFeaturedFilter] = useState<string>("");
-  
-  // Get all articles with pagination
-  const { 
-    data: articles = [], 
+  // Fetch articles
+  const {
+    data: articles = [],
     isLoading: articlesLoading,
     refetch: refetchArticles,
   } = useQuery({
@@ -84,7 +85,7 @@ export default function ArticlesPage() {
     retry: false,
   });
   
-  // Get all categories for filter dropdown
+  // Fetch categories for filter dropdown
   const {
     data: categories = [],
     isLoading: categoriesLoading,
@@ -93,22 +94,27 @@ export default function ArticlesPage() {
     retry: false,
   });
   
-  // Handle delete article
-  const handleDeleteArticle = async (id: number) => {
+  const isLoading = articlesLoading || categoriesLoading;
+
+  // Handle deleting an article
+  const handleDelete = async (id: number) => {
     try {
       await apiRequest(`/api/articles/${id}`, {
         method: "DELETE",
-      });
-      
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({
-        queryKey: ["/api/articles"],
       });
       
       toast({
         title: "Article deleted",
         description: "The article has been successfully deleted.",
       });
+      
+      // Refresh article list
+      queryClient.invalidateQueries({
+        queryKey: ["/api/articles"],
+      });
+      
+      setShowDeleteDialog(false);
+      setArticleToDelete(null);
     } catch (error) {
       console.error("Error deleting article:", error);
       toast({
@@ -118,65 +124,62 @@ export default function ArticlesPage() {
       });
     }
   };
-  
-  // Create a new article
-  const handleCreateArticle = () => {
-    setLocation("/admin/articles/create");
+
+  // Confirm article deletion
+  const confirmDelete = (id: number) => {
+    setArticleToDelete(id);
+    setShowDeleteDialog(true);
   };
-  
-  // Edit an article
-  const handleEditArticle = (id: number) => {
-    setLocation(`/admin/articles/edit/${id}`);
+
+  // Navigate to edit article page
+  const handleEdit = (id: number) => {
+    navigate(`/admin/articles/edit/${id}`);
   };
-  
-  // Handle clearing filters
-  const clearFilters = () => {
-    setSearchQuery("");
-    setCategoryFilter("");
-    setFeaturedFilter("");
-  };
-  
-  // Filter articles based on search and category
+
+  // Filter and sort articles
   const filteredArticles = articles.filter((article: any) => {
-    const matchesSearch = 
-      !searchQuery || 
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.summary.toLowerCase().includes(searchQuery.toLowerCase());
-      
-    const matchesCategory = 
-      !categoryFilter || 
-      article.categoryId.toString() === categoryFilter;
-      
-    const matchesFeatured = 
-      featuredFilter === "" ||
-      (featuredFilter === "true" && article.featured) ||
-      (featuredFilter === "false" && !article.featured);
-      
-    return matchesSearch && matchesCategory && matchesFeatured;
+    const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         article.summary.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = categoryFilter === "all" || 
+                          article.categoryId.toString() === categoryFilter;
+    
+    return matchesSearch && matchesCategory;
   });
-  
-  // Sort articles by publication date (newest first)
+
+  // Sort articles
   const sortedArticles = [...filteredArticles].sort((a: any, b: any) => {
-    return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+    switch (sortBy) {
+      case "newest":
+        return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+      case "oldest":
+        return new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
+      case "title-asc":
+        return a.title.localeCompare(b.title);
+      case "title-desc":
+        return b.title.localeCompare(a.title);
+      case "most-views":
+        return b.views - a.views;
+      case "featured":
+        return Number(b.featured) - Number(a.featured);
+      default:
+        return 0;
+    }
   });
-  
-  // Calculate pagination
-  const totalPages = Math.ceil(sortedArticles.length / pageSize);
+
+  // Paginate articles
   const paginatedArticles = sortedArticles.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
-  
+
+  // Calculate total pages
+  const totalPages = Math.ceil(sortedArticles.length / itemsPerPage);
+
   // Get category name by ID
   const getCategoryName = (categoryId: number) => {
     const category = categories.find((c: any) => c.id === categoryId);
     return category ? category.name : "Unknown";
-  };
-  
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
   };
 
   return (
@@ -185,52 +188,42 @@ export default function ArticlesPage() {
         <title>Articles | GSC Supply Chain News CMS</title>
       </Helmet>
 
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-1">Article Management</h1>
-          <p className="text-gray-600">Manage your news articles</p>
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">Articles</h1>
+          <p className="text-gray-600">Manage all published articles</p>
         </div>
-        <Button 
-          onClick={handleCreateArticle}
-          className="bg-[#BB1919] hover:bg-[#A10000]"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          New Article
+        
+        <Button className="bg-[#BB1919] hover:bg-[#A10000]" onClick={() => navigate("/admin/articles/create")}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Article
         </Button>
       </div>
 
-      <Card className="mb-6">
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <CardTitle>Filters</CardTitle>
-            {(searchQuery || categoryFilter || featuredFilter) && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 gap-1">
-                <X className="h-4 w-4" />
-                Clear
-              </Button>
-            )}
+      {/* Filters and Search */}
+      <div className="mb-6 bg-white p-4 rounded-lg border border-gray-200">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search articles by title or content"
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  placeholder="Search articles..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-            </div>
-            <div>
+          
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+            <div className="w-full sm:w-40">
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Filter by category" />
+                  <span className="flex items-center">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Category" />
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories.map((category: any) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.name}
@@ -239,176 +232,264 @@ export default function ArticlesPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Select value={featuredFilter} onValueChange={setFeaturedFilter}>
+            
+            <div className="w-full sm:w-48">
+              <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Filter by featured status" />
+                  <span className="flex items-center">
+                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Sort by" />
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Articles</SelectItem>
-                  <SelectItem value="true">Featured Only</SelectItem>
-                  <SelectItem value="false">Not Featured</SelectItem>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="oldest">Oldest First</SelectItem>
+                  <SelectItem value="title-asc">Title (A-Z)</SelectItem>
+                  <SelectItem value="title-desc">Title (Z-A)</SelectItem>
+                  <SelectItem value="most-views">Most Views</SelectItem>
+                  <SelectItem value="featured">Featured First</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Articles</CardTitle>
-          <CardDescription>
-            {filteredArticles.length > 0 
-              ? `Showing ${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, filteredArticles.length)} of ${filteredArticles.length} articles`
-              : "No articles found"
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {articlesLoading || categoriesLoading ? (
-            <div className="flex justify-center my-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#BB1919]"></div>
-            </div>
-          ) : filteredArticles.length === 0 ? (
-            <div className="text-center py-12">
-              <List className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-4 text-lg font-medium text-gray-900">No Articles</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                {searchQuery || categoryFilter || featuredFilter
-                  ? "No articles match your search criteria"
-                  : "Get started by creating your first article"
+        </div>
+        
+        {/* Filter summary and reset */}
+        {(searchTerm || categoryFilter !== "all" || sortBy !== "newest") && (
+          <div className="mt-4 flex items-center gap-2 text-sm">
+            <div className="text-gray-500">Filters:</div>
+            
+            {searchTerm && (
+              <Badge variant="outline" className="gap-1">
+                Search: {searchTerm}
+                <button onClick={() => setSearchTerm("")}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            
+            {categoryFilter !== "all" && (
+              <Badge variant="outline" className="gap-1">
+                Category: {getCategoryName(parseInt(categoryFilter, 10))}
+                <button onClick={() => setCategoryFilter("all")}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            
+            {sortBy !== "newest" && (
+              <Badge variant="outline" className="gap-1">
+                Sort: {
+                  sortBy === "title-asc" ? "Title (A-Z)" :
+                  sortBy === "title-desc" ? "Title (Z-A)" :
+                  sortBy === "oldest" ? "Oldest First" :
+                  sortBy === "most-views" ? "Most Views" :
+                  sortBy === "featured" ? "Featured First" : ""
                 }
+                <button onClick={() => setSortBy("newest")}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-blue-600"
+              onClick={() => {
+                setSearchTerm("");
+                setCategoryFilter("all");
+                setSortBy("newest");
+              }}
+            >
+              Reset All
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Articles Table */}
+      {isLoading ? (
+        <div className="flex justify-center my-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#BB1919]"></div>
+        </div>
+      ) : (
+        <>
+          {paginatedArticles.length === 0 ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-4">
+                <FileText className="h-6 w-6 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No articles found</h3>
+              <p className="text-gray-500 mb-4">
+                {searchTerm || categoryFilter !== "all" ? 
+                  "No articles match your search criteria. Try adjusting your filters." : 
+                  "You haven't created any articles yet."}
               </p>
-              {(searchQuery || categoryFilter || featuredFilter) && (
-                <Button variant="outline" onClick={clearFilters} className="mt-4">
+              {searchTerm || categoryFilter !== "all" ? (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setCategoryFilter("all");
+                    setSortBy("newest");
+                  }}
+                >
                   Clear Filters
+                </Button>
+              ) : (
+                <Button
+                  className="bg-[#BB1919] hover:bg-[#A10000]"
+                  onClick={() => navigate("/admin/articles/create")}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Article
                 </Button>
               )}
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Published</TableHead>
-                    <TableHead>Views</TableHead>
-                    <TableHead className="w-[100px] text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedArticles.map((article: any) => (
-                    <TableRow key={article.id}>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <div className="font-medium flex items-center gap-1">
-                            {article.title}
-                            {article.featured && (
-                              <Badge className="ml-1" variant="outline">
-                                <StarIcon className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
-                                Featured
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground truncate max-w-[300px]">
-                            {article.summary}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="font-normal">
-                          {getCategoryName(article.categoryId)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">
-                            {format(new Date(article.publishedAt), "MMM d, yyyy")}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Eye className="h-3 w-3 mr-1 text-muted-foreground" />
-                          <span className="text-sm">{article.views}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-                            onClick={() => handleEditArticle(article.id)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Article</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this article? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteArticle(article.id)}
-                                  className="bg-red-600 hover:bg-red-700 text-white"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
+            <>
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Article</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead className="hidden md:table-cell">Published</TableHead>
+                      <TableHead className="hidden md:table-cell">Views</TableHead>
+                      <TableHead className="w-[100px] text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedArticles.map((article: any) => (
+                      <TableRow key={article.id}>
+                        <TableCell>
+                          <div className="flex items-start space-x-3">
+                            {article.featured && (
+                              <Star className="h-4 w-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                            )}
+                            <div>
+                              <div className="font-medium">{article.title}</div>
+                              <div className="text-sm text-gray-500 truncate max-w-[250px]">
+                                {article.summary}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {getCategoryName(article.categoryId)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="text-sm">
+                            {format(new Date(article.publishedAt), "MMM d, yyyy")}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Eye className="h-3 w-3 mr-1" />
+                            {article.views}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <BarChart className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem onClick={() => handleEdit(article.id)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => confirmDelete(article.id)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center mt-4">
+                  <div className="text-sm text-gray-500">
+                    Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                    {Math.min(currentPage * itemsPerPage, sortedArticles.length)} of{" "}
+                    {sortedArticles.length} articles
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={page === currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className={page === currentPage ? "bg-[#BB1919] hover:bg-[#A10000]" : ""}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
-        </CardContent>
-        {filteredArticles.length > pageSize && (
-          <CardFooter className="flex justify-between">
-            <div className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </div>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardFooter>
-        )}
-      </Card>
+        </>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Article</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this article? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => articleToDelete && handleDelete(articleToDelete)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Article
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
