@@ -46,8 +46,8 @@ export default function ArticleCard({
           alt={title} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        {showCategory && category && size === "large" && (
-          <div className="absolute top-0 left-0 bg-[#BB1919] text-white px-2 py-1 text-xs font-bold">
+        {showCategory && category && (
+          <div className="category-tag">
             {category.name.toUpperCase()}
           </div>
         )}
@@ -62,16 +62,14 @@ export default function ArticleCard({
       )}
       <div className="flex items-center text-[0.8125rem] text-[#5A5A5A]" style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>
         <span>{formattedDate}</span>
-        {showCategory && category && size !== "large" && (
-          <>
-            <span className="mx-2">|</span>
-            <span>
-              <Link href={`/category/${category.slug}`}>
-                <span className="uppercase text-[#BB1919] font-semibold cursor-pointer hover:underline">{category.name}</span>
-              </Link>
+        <span className="mx-2">|</span>
+        <span>
+          <Link href={`/category/${category?.slug || ''}`}>
+            <span className="uppercase text-[#BB1919] font-semibold cursor-pointer hover:underline">
+              {category?.name || 'General'}
             </span>
-          </>
-        )}
+          </Link>
+        </span>
       </div>
     </article>
   );
