@@ -97,6 +97,11 @@ export default function ArticlePage() {
                     alt={article.title} 
                     className="w-full h-full object-cover"
                   />
+                  {category && (
+                    <div className="category-tag">
+                      {category.name.toUpperCase()}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="prose max-w-none">
