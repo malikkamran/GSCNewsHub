@@ -47,7 +47,7 @@ export default function ArticleCard({
       </div>
       <h3 className={titleSizeClass}>
         <Link href={`/article/${slug}`}>
-          <a className="hover:text-[#BB1919]">{title}</a>
+          <span className="hover:text-[#BB1919] cursor-pointer">{title}</span>
         </Link>
       </h3>
       {showSummary && (
@@ -60,7 +60,7 @@ export default function ArticleCard({
             <span className="mx-2">|</span>
             <span>
               <Link href={`/category/${category.slug}`}>
-                <a className="hover:text-[#BB1919]">{category.name}</a>
+                <span className="hover:text-[#BB1919] cursor-pointer">{category.name}</span>
               </Link>
             </span>
           </>

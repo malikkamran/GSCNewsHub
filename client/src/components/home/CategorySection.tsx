@@ -32,7 +32,7 @@ export default function CategorySection({ categorySlug }: CategorySectionProps) 
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold font-roboto">{category.name}</h2>
         <Link href={`/category/${category.slug}`}>
-          <a className="text-[#BB1919] text-sm hover:underline">View all</a>
+          <span className="text-[#BB1919] text-sm hover:underline cursor-pointer">View all</span>
         </Link>
       </div>
       

@@ -28,17 +28,17 @@ export default function Header() {
         <div className="flex justify-between items-center py-3">
           <div className="flex items-center space-x-4">
             <Link href="/">
-              <a className="text-white font-roboto font-bold text-2xl md:text-3xl">
+              <span className="text-white font-roboto font-bold text-2xl md:text-3xl cursor-pointer">
                 GSC Supply Chain News
-              </a>
+              </span>
             </Link>
           </div>
           <div className="hidden md:flex items-center space-x-6">
             <Link href="/sign-in">
-              <a className="text-white hover:text-gray-200 flex items-center gap-1">
+              <span className="text-white hover:text-gray-200 flex items-center gap-1 cursor-pointer">
                 <User size={18} />
                 <span>Sign In</span>
-              </a>
+              </span>
             </Link>
             <div className="relative">
               <Input 
@@ -70,17 +70,17 @@ export default function Header() {
           <ul className="flex flex-wrap space-x-6 text-white">
             <li>
               <Link href="/">
-                <a className={`font-medium hover:text-gray-200 ${location === '/' ? 'text-white' : 'text-gray-200'}`}>
+                <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/' ? 'text-white' : 'text-gray-200'}`}>
                   Home
-                </a>
+                </span>
               </Link>
             </li>
             {categories?.map(category => (
               <li key={category.id}>
                 <Link href={`/category/${category.slug}`}>
-                  <a className={`font-medium hover:text-gray-200 ${location === `/category/${category.slug}` ? 'text-white' : 'text-gray-200'}`}>
+                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === `/category/${category.slug}` ? 'text-white' : 'text-gray-200'}`}>
                     {category.name}
-                  </a>
+                  </span>
                 </Link>
               </li>
             ))}
@@ -110,13 +110,17 @@ export default function Header() {
       {showMobileMenu && (
         <nav className="md:hidden bg-gray-800">
           <ul className="text-white px-4 py-2">
-            <li><Link href="/"><a className="block py-2 border-b border-gray-700">Home</a></Link></li>
+            <li>
+              <Link href="/">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Home</span>
+              </Link>
+            </li>
             {categories?.map((category, index) => (
               <li key={category.id}>
                 <Link href={`/category/${category.slug}`}>
-                  <a className={`block py-2 ${index < categories.length - 1 ? 'border-b border-gray-700' : ''}`}>
+                  <span className={`block py-2 cursor-pointer ${index < categories.length - 1 ? 'border-b border-gray-700' : ''}`}>
                     {category.name}
-                  </a>
+                  </span>
                 </Link>
               </li>
             ))}
