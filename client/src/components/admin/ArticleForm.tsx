@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { ChevronLeft, Save, Loader2, Check, Calendar, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -79,6 +80,7 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   // Get all categories for dropdown
   const {
@@ -182,9 +184,15 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
     setIsSubmitting(true);
 
     try {
+      // Add the publisher information to the data
+      const dataWithPublisher = {
+        ...data,
+        publishedBy: user?.username || "admin"
+      };
+      
       if (articleId) {
         // Update existing article
-        await apiRequest("PUT", `/api/articles/${articleId}`, data);
+        await apiRequest("PUT", `/api/articles/${articleId}`, dataWithPublisher);
 
         toast({
           title: "Article updated",
@@ -192,7 +200,7 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
         });
       } else {
         // Create new article
-        await apiRequest("POST", "/api/articles", data);
+        await apiRequest("POST", "/api/articles", dataWithPublisher);
 
         toast({
           title: "Article created",

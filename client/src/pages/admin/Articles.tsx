@@ -417,6 +417,7 @@ export default function ArticlesPage() {
                       <TableHead>Category</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="hidden md:table-cell">Published</TableHead>
+                      <TableHead className="hidden lg:table-cell">Publisher</TableHead>
                       <TableHead className="hidden md:table-cell">Views</TableHead>
                       <TableHead className="w-[100px] text-right">Actions</TableHead>
                     </TableRow>
@@ -456,6 +457,11 @@ export default function ArticlesPage() {
                         <TableCell className="hidden md:table-cell">
                           <div className="text-sm">
                             {format(new Date(article.publishedAt), "MMM d, yyyy")}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <div className="text-sm">
+                            {article.publishedBy || "Unknown"}
                           </div>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
