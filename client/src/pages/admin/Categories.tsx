@@ -15,6 +15,7 @@ import {
   FileText,
   Loader2,
   Save,
+  AlertTriangle,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -231,6 +232,11 @@ export default function CategoriesPage() {
   const confirmDelete = (id: number) => {
     setCategoryToDelete(id);
     setShowDeleteDialog(true);
+  };
+  
+  // Get category details by ID
+  const getCategoryById = (id: number) => {
+    return categories.find((cat: any) => cat.id === id);
   };
 
   // Cancel editing
@@ -482,18 +488,54 @@ export default function CategoriesPage() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Category</DialogTitle>
-            <DialogDescription>
-              {categoryToDelete && articleCountByCategory[categoryToDelete] ? (
-                <span className="text-amber-600">
-                  Warning: This category has {articleCountByCategory[categoryToDelete]} article(s). 
-                  Deleting it will leave these articles uncategorized.
-                </span>
-              ) : (
-                "Are you sure you want to delete this category? This action cannot be undone."
-              )}
+            <DialogTitle className="flex items-center text-red-600">
+              <Trash2 className="h-5 w-5 mr-2" />
+              Delete Category
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              Are you sure you want to delete this category? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
+          
+          {categoryToDelete && (
+            <div className="border rounded-md p-4 my-4 bg-gray-50">
+              <h3 className="font-semibold text-base mb-2">
+                {getCategoryById(categoryToDelete)?.name}
+              </h3>
+              
+              <div className="text-sm text-gray-600 flex items-center gap-2 mb-2">
+                <span className="font-medium">URL Slug:</span>
+                <code className="bg-gray-200 px-1.5 py-0.5 rounded text-xs">
+                  {getCategoryById(categoryToDelete)?.slug}
+                </code>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Articles in this category:</span>
+                <Badge variant="default" className="flex items-center">
+                  <FileText className="h-3 w-3 mr-1" />
+                  {articleCountByCategory[categoryToDelete] || 0}
+                </Badge>
+              </div>
+              
+              {articleCountByCategory[categoryToDelete] > 0 && (
+                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                  <div className="flex items-start">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 mr-2 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-amber-800">Warning</p>
+                      <p className="text-xs text-amber-800 mt-1">
+                        This category has {articleCountByCategory[categoryToDelete]} article(s).
+                        Deleting it will leave these articles uncategorized until you assign them
+                        to a different category. Consider editing this category instead of deleting it.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
@@ -506,7 +548,8 @@ export default function CategoriesPage() {
               onClick={() => categoryToDelete && handleDelete(categoryToDelete)}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete Category
+              {articleCountByCategory[categoryToDelete || 0] > 0 ? 
+                "Delete Anyway" : "Delete Category"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -118,8 +118,10 @@ export default function ArticlesPage() {
         exact: false
       });
       
+      // Clear state
       setShowDeleteDialog(false);
       setArticleToDelete(null);
+      setArticleToDeleteDetails(null);
     } catch (error) {
       console.error("Error deleting article:", error);
       toast({
@@ -538,11 +540,48 @@ export default function ArticlesPage() {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Article</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="flex items-center text-red-600">
+              <Trash2 className="h-5 w-5 mr-2" />
+              Delete Article
+            </DialogTitle>
+            <DialogDescription className="pt-2">
               Are you sure you want to delete this article? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
+          
+          {articleToDeleteDetails && (
+            <div className="border rounded-md p-4 my-4 bg-gray-50">
+              <h3 className="font-semibold text-base mb-2">{articleToDeleteDetails.title}</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center text-gray-600">
+                  <span className="font-medium w-24">Category:</span> 
+                  {getCategoryName(articleToDeleteDetails.categoryId)}
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <span className="font-medium w-24">Status:</span>
+                  <Badge variant={articleToDeleteDetails.status === "published" ? "default" : "outline"} className={articleToDeleteDetails.status === "published" ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}>
+                    {articleToDeleteDetails.status === "published" ? "Published" : "Draft"}
+                  </Badge>
+                </div>
+                {articleToDeleteDetails.featured && (
+                  <div className="flex items-center text-yellow-600">
+                    <span className="font-medium w-24">Featured:</span>
+                    <Star className="h-4 w-4" />
+                    <span className="ml-1">This is a featured article</span>
+                  </div>
+                )}
+                <div className="flex items-center text-gray-600">
+                  <span className="font-medium w-24">Views:</span> 
+                  {articleToDeleteDetails.views}
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <span className="font-medium w-24">Published:</span> 
+                  {new Date(articleToDeleteDetails.publishedAt).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+          )}
+          
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
@@ -555,7 +594,7 @@ export default function ArticlesPage() {
               onClick={() => articleToDelete && handleDelete(articleToDelete)}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete Article
+              Confirm Delete
             </Button>
           </DialogFooter>
         </DialogContent>
