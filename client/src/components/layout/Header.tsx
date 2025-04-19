@@ -35,14 +35,14 @@ export default function Header() {
         </div>
       </div>
       
-      {/* Main header with logo and red background */}
-      <div className="bg-[#BB1919]">
+      {/* Main header with logo and white background */}
+      <div className="bg-white">
         <div className="container mx-auto px-4">
           {/* Logo and search */}
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               <Link href="/">
-                <span className="text-white font-roboto font-bold text-2xl md:text-3xl cursor-pointer">
+                <span className="text-[#BB1919] font-roboto font-bold text-2xl md:text-3xl cursor-pointer">
                   GSC Supply Chain News
                 </span>
               </Link>
@@ -66,7 +66,7 @@ export default function Header() {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="md:hidden text-white"
+              className="md:hidden text-[#BB1919]"
               onClick={toggleMobileMenu}
             >
               <Menu />
