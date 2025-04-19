@@ -9,6 +9,9 @@ import Footer from "@/components/layout/Footer";
 import Home from "@/pages/Home";
 import CategoryPage from "@/pages/CategoryPage";
 import ArticlePage from "@/pages/ArticlePage";
+import AboutPage from "@/pages/AboutPage";
+import TermsPage from "@/pages/TermsPage";
+import PrivacyPage from "@/pages/PrivacyPage";
 import AuthPage from "@/pages/auth-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -32,6 +35,9 @@ function Router() {
       <Route path="/category/:slug" component={CategoryPage}/>
       <Route path="/article/:slug" component={ArticlePage}/>
       <Route path="/auth" component={AuthPage}/>
+      <Route path="/about" component={AboutPage}/>
+      <Route path="/terms" component={TermsPage}/>
+      <Route path="/privacy" component={PrivacyPage}/>
       
       {/* Admin routes */}
       <Route path="/admin/login" component={AdminLogin}/>
