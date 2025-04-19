@@ -95,7 +95,8 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
       
       setIsLoading(true);
       try {
-        const article = await apiRequest(`/api/articles/${articleId}`);
+        const response = await apiRequest("GET", `/api/articles/${articleId}`);
+        const article = await response.json();
         
         if (article) {
           form.reset({
@@ -152,10 +153,7 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
     try {
       if (articleId) {
         // Update existing article
-        await apiRequest(`/api/articles/${articleId}`, {
-          method: "PATCH",
-          body: JSON.stringify(data),
-        });
+        await apiRequest("PUT", `/api/articles/${articleId}`, data);
 
         toast({
           title: "Article updated",
@@ -163,10 +161,7 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
         });
       } else {
         // Create new article
-        await apiRequest("/api/articles", {
-          method: "POST",
-          body: JSON.stringify(data),
-        });
+        await apiRequest("POST", "/api/articles", data);
 
         toast({
           title: "Article created",
