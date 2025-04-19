@@ -54,6 +54,7 @@ export const articles = pgTable("articles", {
   featured: boolean("featured").default(false),
   status: text("status").notNull().default("published"),
   publishedAt: timestamp("published_at").notNull().defaultNow(),
+  publishedBy: text("published_by"),
   views: integer("views").default(0),
 });
 

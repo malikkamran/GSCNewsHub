@@ -183,7 +183,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             fixed inset-0 top-16 z-20 md:z-0 overflow-y-auto
           `}
         >
-          <nav className="space-y-2 mt-2">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            Content Management
+          </h3>
+          <nav className="space-y-2 mb-6">
             <Link to="/admin/dashboard">
               {({ isActive }) => (
                 <Button
@@ -212,7 +215,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   onClick={() => handleNavigate("/admin/articles")}
                 >
                   <FileText className="h-4 w-4 mr-2" />
-                  Articles
+                  Manage Articles
                 </Button>
               )}
             </Link>
@@ -228,18 +231,32 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   onClick={() => handleNavigate("/admin/categories")}
                 >
                   <FolderOpen className="h-4 w-4 mr-2" />
-                  Categories
+                  Manage Categories
                 </Button>
               )}
             </Link>
           </nav>
           
-          <div className="border-t border-gray-200 mt-6 pt-6">
-            <Button variant="outline" size="sm" className="w-full text-red-600" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </div>
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            User Management
+          </h3>
+          <nav className="space-y-2">
+            <Link to="/admin/users">
+              {({ isActive }) => (
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  size="sm"
+                  className={`w-full justify-start ${
+                    isActive ? "bg-gray-100 text-[#BB1919] font-medium" : ""
+                  }`}
+                  onClick={() => handleNavigate("/admin/users")}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Manage Users
+                </Button>
+              )}
+            </Link>
+          </nav>
         </aside>
 
         {/* Main Content */}

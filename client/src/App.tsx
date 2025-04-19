@@ -27,6 +27,7 @@ import AdminArticles from "@/pages/admin/Articles";
 import AdminCreateArticle from "@/pages/admin/CreateArticle";
 import AdminEditArticle from "@/pages/admin/EditArticle";
 import AdminCategories from "@/pages/admin/Categories";
+import AdminUsers from "@/pages/admin/Users";
 
 function Router() {
   const [location] = useLocation();
@@ -54,6 +55,7 @@ function Router() {
       <ProtectedRoute path="/admin/articles/create" component={AdminCreateArticle}/>
       <ProtectedRoute path="/admin/articles/edit/:id" component={AdminEditArticle}/>
       <ProtectedRoute path="/admin/categories" component={AdminCategories}/>
+      <ProtectedRoute path="/admin/users" component={AdminUsers}/>
       
       <Route component={NotFound} />
     </Switch>
