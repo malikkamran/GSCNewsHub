@@ -16,15 +16,21 @@ export interface IStorage {
   // Category operations
   getCategories(): Promise<Category[]>;
   getCategoryBySlug(slug: string): Promise<Category | undefined>;
+  getCategory(id: number): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
+  updateCategory(id: number, category: InsertCategory): Promise<Category | undefined>;
+  deleteCategory(id: number): Promise<boolean>;
 
   // Article operations
   getArticles(limit?: number, offset?: number): Promise<Article[]>;
   getArticlesByCategory(categoryId: number, limit?: number, offset?: number): Promise<Article[]>;
   getArticleBySlug(slug: string): Promise<Article | undefined>;
+  getArticle(id: number): Promise<Article | undefined>;
   getFeaturedArticles(limit?: number): Promise<Article[]>;
   getMostViewedArticles(limit?: number): Promise<Article[]>;
   createArticle(article: InsertArticle): Promise<Article>;
+  updateArticle(id: number, article: InsertArticle): Promise<Article | undefined>;
+  deleteArticle(id: number): Promise<boolean>;
   incrementArticleViews(id: number): Promise<Article | undefined>;
 
   // Analyst operations
@@ -392,12 +398,39 @@ export class MemStorage implements IStorage {
       (category) => category.slug === slug,
     );
   }
+  
+  async getCategory(id: number): Promise<Category | undefined> {
+    return this.categories.get(id);
+  }
 
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
     const id = this.categoryId++;
     const category: Category = { ...insertCategory, id };
     this.categories.set(id, category);
     return category;
+  }
+  
+  async updateCategory(id: number, insertCategory: InsertCategory): Promise<Category | undefined> {
+    const existingCategory = this.categories.get(id);
+    
+    if (!existingCategory) {
+      return undefined;
+    }
+    
+    const updatedCategory: Category = { ...insertCategory, id };
+    this.categories.set(id, updatedCategory);
+    return updatedCategory;
+  }
+  
+  async deleteCategory(id: number): Promise<boolean> {
+    const exists = this.categories.has(id);
+    
+    if (exists) {
+      this.categories.delete(id);
+      return true;
+    }
+    
+    return false;
   }
 
   // Article operations

@@ -4,7 +4,60 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { insertArticleSchema, insertCategorySchema, insertUserSchema, insertAnalystSchema, insertAnalysisSchema, insertVideoSchema } from "@shared/schema";
 
+// Middleware to check if user is authenticated
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  if (req.session && req.session.user) {
+    return next();
+  }
+  return res.status(401).json({ authenticated: false, message: "Unauthorized" });
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication routes
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    try {
+      const { username, password } = req.body;
+      
+      // Find user by username
+      const user = await storage.getUserByUsername(username);
+      
+      // Check if user exists and password matches
+      if (user && user.password === password) { // In a real app, use bcrypt for password hashing
+        // Set user in session (except password)
+        const { password: _, ...userWithoutPassword } = user;
+        req.session.user = userWithoutPassword;
+        
+        return res.json({ success: true });
+      }
+      
+      // Invalid credentials
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  });
+  
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    // Destroy session
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ success: false, message: "Failed to logout" });
+      }
+      
+      res.clearCookie('connect.sid');
+      return res.json({ success: true });
+    });
+  });
+  
+  app.get("/api/auth/check", (req: Request, res: Response) => {
+    // Check if user is authenticated
+    if (req.session && req.session.user) {
+      return res.json({ authenticated: true, user: req.session.user });
+    }
+    
+    return res.json({ authenticated: false });
+  });
+  
   // prefix all routes with /api
   const apiRouter = app.route('/api');
   
@@ -147,6 +200,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch analysis article' });
+    }
+  });
+  
+  // CMS API Routes - protected by authentication
+  
+  // Articles CRUD operations
+  app.post('/api/articles', isAuthenticated, async (req, res) => {
+    try {
+      // Validate request data
+      const articleData = insertArticleSchema.parse(req.body);
+      
+      // Create article
+      const article = await storage.createArticle(articleData);
+      res.status(201).json(article);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid article data', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Failed to create article' });
+    }
+  });
+  
+  app.put('/api/articles/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Get existing article
+      const existingArticle = await storage.getArticle(id);
+      if (!existingArticle) {
+        return res.status(404).json({ message: 'Article not found' });
+      }
+      
+      // Validate request data
+      const articleData = insertArticleSchema.parse(req.body);
+      
+      // Update article
+      const updatedArticle = await storage.updateArticle(id, articleData);
+      res.json(updatedArticle);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid article data', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Failed to update article' });
+    }
+  });
+  
+  app.delete('/api/articles/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Delete article
+      const result = await storage.deleteArticle(id);
+      if (!result) {
+        return res.status(404).json({ message: 'Article not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete article' });
+    }
+  });
+  
+  // Categories CRUD operations
+  app.post('/api/categories', isAuthenticated, async (req, res) => {
+    try {
+      // Validate request data
+      const categoryData = insertCategorySchema.parse(req.body);
+      
+      // Create category
+      const category = await storage.createCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid category data', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Failed to create category' });
+    }
+  });
+  
+  app.put('/api/categories/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Get existing category
+      const existingCategory = await storage.getCategory(id);
+      if (!existingCategory) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+      
+      // Validate request data
+      const categoryData = insertCategorySchema.parse(req.body);
+      
+      // Update category
+      const updatedCategory = await storage.updateCategory(id, categoryData);
+      res.json(updatedCategory);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid category data', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Failed to update category' });
+    }
+  });
+  
+  app.delete('/api/categories/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if category has articles
+      const articles = await storage.getArticlesByCategory(id);
+      if (articles.length > 0) {
+        return res.status(400).json({ 
+          message: 'Cannot delete category with associated articles. Reassign articles first.' 
+        });
+      }
+      
+      // Delete category
+      const result = await storage.deleteCategory(id);
+      if (!result) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete category' });
     }
   });
 
