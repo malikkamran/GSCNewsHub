@@ -61,6 +61,7 @@ export default function ArticlesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [articleToDelete, setArticleToDelete] = useState<number | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -73,7 +74,7 @@ export default function ArticlesPage() {
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, categoryFilter, sortBy]);
+  }, [searchTerm, categoryFilter, statusFilter, sortBy]);
   
   // Fetch articles
   const {
@@ -144,7 +145,10 @@ export default function ArticlesPage() {
     const matchesCategory = categoryFilter === "all" || 
                           article.categoryId.toString() === categoryFilter;
     
-    return matchesSearch && matchesCategory;
+    const matchesStatus = statusFilter === "all" || 
+                          article.status === statusFilter;
+    
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   // Sort articles
@@ -229,6 +233,22 @@ export default function ArticlesPage() {
                       {category.name}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="w-full sm:w-36">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <span className="flex items-center">
+                    <FileCheck className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Status" />
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -355,6 +375,7 @@ export default function ArticlesPage() {
                     <TableRow>
                       <TableHead>Article</TableHead>
                       <TableHead>Category</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead className="hidden md:table-cell">Published</TableHead>
                       <TableHead className="hidden md:table-cell">Views</TableHead>
                       <TableHead className="w-[100px] text-right">Actions</TableHead>
@@ -379,6 +400,17 @@ export default function ArticlesPage() {
                         <TableCell>
                           <Badge variant="outline">
                             {getCategoryName(article.categoryId)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={article.status === "published" ? "default" : "secondary"}
+                            className={article.status === "published" 
+                              ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                              : "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                            }
+                          >
+                            {article.status === "published" ? "Published" : "Draft"}
                           </Badge>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
