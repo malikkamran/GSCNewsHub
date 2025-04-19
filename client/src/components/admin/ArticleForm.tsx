@@ -48,6 +48,7 @@ const articleSchema = z.object({
   imageUrl: z.string().url("Must be a valid URL"),
   categoryId: z.coerce.number().min(1, "Please select a category"),
   featured: z.boolean().default(false),
+  status: z.enum(["published", "draft"]).default("published"),
 });
 
 type ArticleFormValues = z.infer<typeof articleSchema>;
@@ -83,6 +84,7 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
       imageUrl: "",
       categoryId: 0,
       featured: false,
+      status: "published",
     },
   });
 
@@ -104,6 +106,7 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
             imageUrl: article.imageUrl,
             categoryId: article.categoryId,
             featured: article.featured,
+            status: article.status || "published",
           });
         }
       } catch (error) {
