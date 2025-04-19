@@ -37,6 +37,7 @@ type RegisterValues = z.infer<typeof registerSchema>;
 
 function LoginForm() {
   const { loginMutation } = useAuth();
+  const [, navigate] = useLocation();
   
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -47,7 +48,16 @@ function LoginForm() {
   });
   
   function onSubmit(values: LoginValues) {
-    loginMutation.mutate(values);
+    loginMutation.mutate(values, {
+      onSuccess: (user) => {
+        // Redirect based on user role
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/');
+        }
+      }
+    });
   }
   
   return (
@@ -227,6 +237,11 @@ export default function AuthPage() {
   
   // Redirect if user is already logged in
   if (user && !isLoading) {
+    // If the user is an admin, redirect to admin dashboard
+    if (user.role === 'admin') {
+      return <Redirect to="/admin/dashboard" />;
+    }
+    // Otherwise redirect to homepage
     return <Redirect to="/" />;
   }
   
