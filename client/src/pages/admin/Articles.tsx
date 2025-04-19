@@ -65,6 +65,7 @@ export default function ArticlesPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [articleToDelete, setArticleToDelete] = useState<number | null>(null);
+  const [articleToDeleteDetails, setArticleToDeleteDetails] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   const itemsPerPage = 10;
@@ -131,7 +132,9 @@ export default function ArticlesPage() {
 
   // Confirm article deletion
   const confirmDelete = (id: number) => {
+    const articleDetails = articles.find((article: any) => article.id === id);
     setArticleToDelete(id);
+    setArticleToDeleteDetails(articleDetails);
     setShowDeleteDialog(true);
   };
 
