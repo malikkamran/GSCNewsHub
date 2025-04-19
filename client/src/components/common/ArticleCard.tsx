@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Article, Category } from "@/lib/types";
-import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 
 interface ArticleCardProps {
   article: Article;
@@ -17,33 +17,40 @@ export default function ArticleCard({
   showCategory = true,
   showSummary = true
 }: ArticleCardProps) {
-  const { title, slug, summary, imageUrl, publishedAt, categoryId } = article;
+  const { title, slug, summary, imageUrl, publishedAt } = article;
   
-  // Format the date
+  // Format the date - use MMM d format like "Apr 19" instead of relative time
   const publishedDate = new Date(publishedAt);
-  const timeAgo = formatDistanceToNow(publishedDate, { addSuffix: false });
+  const formattedDate = format(publishedDate, "MMM d");
   
-  // Size variants
-  const imageSizeClass = size === "large" 
-    ? "aspect-video mb-3" 
-    : size === "medium" 
-      ? "aspect-video mb-3" 
-      : "aspect-video mb-3";
+  // Container styling
+  let containerClass = "border-b pb-4 border-[#DDDDDD]";
   
-  const titleSizeClass = size === "large" 
-    ? "text-3xl font-bold mb-2 font-roboto" 
-    : size === "medium" 
-      ? "text-xl font-bold mb-2 font-roboto" 
-      : "text-lg font-bold mb-2 font-roboto";
+  // Title styling based on size
+  let titleSizeClass = "font-bold mb-2 font-roboto leading-tight";
+  
+  if (size === "small") {
+    titleSizeClass += " text-base";
+  } else if (size === "medium") {
+    titleSizeClass += " text-xl";
+  } else if (size === "large") {
+    titleSizeClass += " text-2xl lg:text-3xl";
+    containerClass += " pb-6";
+  }
   
   return (
-    <article className="border-b pb-4 border-[#DDDDDD]">
-      <div className={`relative ${imageSizeClass}`}>
+    <article className={containerClass}>
+      <div className="relative aspect-video mb-3 overflow-hidden group">
         <img 
           src={imageUrl} 
           alt={title} 
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
+        {showCategory && category && size === "large" && (
+          <div className="absolute top-0 left-0 bg-[#BB1919] text-white px-2 py-1 text-xs font-bold">
+            {category.name.toUpperCase()}
+          </div>
+        )}
       </div>
       <h3 className={titleSizeClass}>
         <Link href={`/article/${slug}`}>
@@ -51,16 +58,16 @@ export default function ArticleCard({
         </Link>
       </h3>
       {showSummary && (
-        <p className="text-gray-600 mb-3 text-sm">{summary}</p>
+        <p className="text-gray-700 mb-3 text-sm leading-snug">{summary}</p>
       )}
-      <div className="flex items-center text-sm text-gray-500">
-        <span>{timeAgo} ago</span>
-        {showCategory && category && (
+      <div className="flex items-center text-xs text-gray-500">
+        <span>{formattedDate}</span>
+        {showCategory && category && size !== "large" && (
           <>
             <span className="mx-2">|</span>
             <span>
               <Link href={`/category/${category.slug}`}>
-                <span className="hover:text-[#BB1919] cursor-pointer">{category.name}</span>
+                <span className="uppercase text-[#BB1919] font-semibold cursor-pointer hover:underline">{category.name}</span>
               </Link>
             </span>
           </>

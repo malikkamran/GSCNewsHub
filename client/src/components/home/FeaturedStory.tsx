@@ -22,7 +22,7 @@ export default function FeaturedStory() {
   
   return (
     <section className="mb-8">
-      <h2 className="text-2xl font-bold mb-4 font-roboto">Top Story</h2>
+      <h2 className="text-2xl font-bold mb-4 font-roboto border-b-2 border-[#BB1919] pb-2 inline-block">Top Story</h2>
       
       {isLoading ? (
         <div className="border-b pb-6 border-[#DDDDDD]">

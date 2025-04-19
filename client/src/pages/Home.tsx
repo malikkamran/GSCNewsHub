@@ -27,15 +27,23 @@ export default function Home() {
       <Breadcrumb items={breadcrumbItems} />
       
       {/* Main Content Area */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-4">
+        {/* Red TOP NEWS bar */}
+        <div className="bg-[#BB1919] mb-4">
+          <h2 className="text-white text-xl font-bold py-2 px-3 font-roboto">TOP NEWS</h2>
+        </div>
+        
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
-          <div className="lg:w-8/12">
+          <div className="lg:w-2/3">
             <FeaturedStory />
             <LatestNews />
             
             {/* In-content Ad */}
-            <AdBanner slot="in-article" format="horizontal" className="my-8" />
+            <div className="my-8">
+              <div className="text-xs text-gray-500 mb-1">ADVERTISEMENT</div>
+              <AdBanner slot="in-article" format="horizontal" className="border border-gray-200" />
+            </div>
             
             {/* Category Sections */}
             <CategorySection categorySlug="business" />
@@ -43,15 +51,21 @@ export default function Home() {
           </div>
           
           {/* Sidebar */}
-          <div className="lg:w-4/12">
+          <div className="lg:w-1/3">
             {/* Sidebar Ad */}
-            <AdBanner slot="sidebar-top" format="rectangle" className="mb-6" />
+            <div className="mb-6">
+              <div className="text-xs text-gray-500 mb-1">ADVERTISEMENT</div>
+              <AdBanner slot="sidebar-top" format="rectangle" className="border border-gray-200" />
+            </div>
             
             <MostRead />
             <FeaturedVideo />
             
             {/* Second Sidebar Ad */}
-            <AdBanner slot="sidebar-middle" format="rectangle" className="mb-6" />
+            <div className="mb-6">
+              <div className="text-xs text-gray-500 mb-1">ADVERTISEMENT</div>
+              <AdBanner slot="sidebar-middle" format="rectangle" className="border border-gray-200" />
+            </div>
             
             <ExpertAnalysis />
           </div>

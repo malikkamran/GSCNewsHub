@@ -17,7 +17,7 @@ export default function LatestNews() {
   
   return (
     <section className="mb-8">
-      <h2 className="text-2xl font-bold mb-4 font-roboto">Latest News</h2>
+      <h2 className="text-2xl font-bold mb-4 font-roboto border-b-2 border-[#BB1919] pb-2 inline-block">Latest News</h2>
       
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2">
