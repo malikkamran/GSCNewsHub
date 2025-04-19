@@ -187,43 +187,43 @@ export default function Header() {
           <ul className="text-white px-4 py-2">
             <li>
               <Link href="/">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Home</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Home</span>
               </Link>
             </li>
             {/* New primary navigation items */}
             <li>
               <Link href="/category/logistics">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Logistics</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Logistics</span>
               </Link>
             </li>
             <li>
               <Link href="/category/warehousing">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Warehousing</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Warehousing</span>
               </Link>
             </li>
             <li>
               <Link href="/category/procurement">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Procurement</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Procurement</span>
               </Link>
             </li>
             <li>
               <Link href="/category/manufacturing">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Manufacturing</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Manufacturing</span>
               </Link>
             </li>
             <li>
               <Link href="/category/tech-digital">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Tech & Digital</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Tech & Digital</span>
               </Link>
             </li>
             <li>
               <Link href="/category/sustainability">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Sustainability</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Sustainability</span>
               </Link>
             </li>
             <li>
               <Link href="/category/market-insights">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Market Insights</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Market Insights</span>
               </Link>
             </li>
             
@@ -233,42 +233,42 @@ export default function Header() {
             </li>
             <li>
               <Link href="/category/trade-policy">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Trade Policy</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Trade Policy</span>
               </Link>
             </li>
             <li>
               <Link href="/category/risk-security">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Risk & Security</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Risk & Security</span>
               </Link>
             </li>
             <li>
               <Link href="/category/e-commerce">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">E-commerce</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">E-commerce</span>
               </Link>
             </li>
             <li>
               <Link href="/category/infrastructure">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Infrastructure</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Infrastructure</span>
               </Link>
             </li>
             <li>
               <Link href="/category/cold-chain">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Cold Chain</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Cold Chain</span>
               </Link>
             </li>
             <li>
               <Link href="/category/events-conferences">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Events & Conferences</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Events & Conferences</span>
               </Link>
             </li>
             <li>
               <Link href="/category/company-profiles">
-                <span className="block py-2 border-b border-gray-700 cursor-pointer">Company Profiles</span>
+                <span className="mobile-nav-link block py-2 border-b border-gray-700">Company Profiles</span>
               </Link>
             </li>
             <li>
               <Link href="/category/innovation">
-                <span className="block py-2 cursor-pointer">Innovation</span>
+                <span className="mobile-nav-link block py-2">Innovation</span>
               </Link>
             </li>
           </ul>

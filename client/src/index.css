@@ -21,7 +21,7 @@
 
 .nav-item {
   padding: 0.65rem 1rem;
-  font-weight: 400;
+  font-weight: 500; /* Semi-bold */
   font-size: 0.8125rem; /* 13px - BBC News nav size */
   transition: background-color 0.2s ease;
   font-family: Helvetica, Arial, sans-serif;
@@ -54,6 +54,7 @@
     font-family: Helvetica, Arial, sans-serif;
     font-size: 0.9375rem; /* 15px - BBC News body text */
     line-height: 1.35;
+    font-weight: 400; /* Normal weight base, will use semi-bold where needed */
   }
 
   h1 {
@@ -105,6 +106,7 @@
   
   .article-summary {
     font-family: Helvetica, Arial, sans-serif;
+    font-weight: 500; /* Semi-bold */
     @apply text-[0.9375rem] text-[#404040] leading-[1.35];
   }
   
@@ -125,6 +127,15 @@
   
   .ad-container {
     @apply bg-gray-100 border border-gray-200 flex items-center justify-center text-center;
+  }
+  
+  .mobile-nav-link {
+    font-family: Helvetica, Arial, sans-serif;
+    font-weight: 500; /* Semi-bold */
+    font-size: 0.9375rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #444;
+    cursor: pointer;
   }
 }
 
