@@ -138,14 +138,17 @@ export default function ArticlesPage() {
 
   // Filter and sort articles
   const filteredArticles = articles.filter((article: any) => {
+    // Filter by search term (title or summary)
     const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          article.summary.toLowerCase().includes(searchTerm.toLowerCase());
     
+    // Filter by category
     const matchesCategory = categoryFilter === "all" || 
                           article.categoryId.toString() === categoryFilter;
     
+    // Filter by status - ensure we correctly check for the status property
     const matchesStatus = statusFilter === "all" || 
-                          article.status === statusFilter;
+                         (article.status && article.status === statusFilter);
     
     return matchesSearch && matchesCategory && matchesStatus;
   });

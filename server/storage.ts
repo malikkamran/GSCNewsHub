@@ -32,7 +32,7 @@ export interface IStorage {
   deleteCategory(id: number): Promise<boolean>;
 
   // Article operations
-  getArticles(limit?: number, offset?: number): Promise<Article[]>;
+  getArticles(limit?: number, offset?: number, status?: string): Promise<Article[]>;
   getArticlesByCategory(categoryId: number, limit?: number, offset?: number): Promise<Article[]>;
   getArticleBySlug(slug: string): Promise<Article | undefined>;
   getArticle(id: number): Promise<Article | undefined>;
@@ -527,8 +527,15 @@ export class MemStorage implements IStorage {
   }
 
   // Article operations
-  async getArticles(limit: number = 10, offset: number = 0): Promise<Article[]> {
-    return Array.from(this.articles.values())
+  async getArticles(limit: number = 10, offset: number = 0, status?: string): Promise<Article[]> {
+    let articles = Array.from(this.articles.values());
+    
+    // Filter by status if provided
+    if (status) {
+      articles = articles.filter(article => article.status === status);
+    }
+    
+    return articles
       .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
       .slice(offset, offset + limit);
   }
@@ -588,8 +595,9 @@ export class MemStorage implements IStorage {
       ...insertArticle, 
       id,
       views: existingArticle.views || 0,
-      featured: insertArticle.featured || false,
-      status: insertArticle.status || existingArticle.status || "published",
+      featured: insertArticle.featured ?? existingArticle.featured ?? false,
+      // Ensure status is updated when it's explicitly provided in the update
+      status: insertArticle.status !== undefined ? insertArticle.status : existingArticle.status || "published",
       publishedAt: insertArticle.publishedAt || existingArticle.publishedAt
     };
     
