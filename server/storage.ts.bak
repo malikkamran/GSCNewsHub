@@ -1,0 +1,432 @@
+import {
+  users, type User, type InsertUser,
+  categories, type Category, type InsertCategory,
+  articles, type Article, type InsertArticle,
+  analysts, type Analyst, type InsertAnalyst,
+  analysis, type Analysis, type InsertAnalysis,
+  videos, type Video, type InsertVideo
+} from "@shared/schema";
+
+export interface IStorage {
+  // User operations
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+
+  // Category operations
+  getCategories(): Promise<Category[]>;
+  getCategoryBySlug(slug: string): Promise<Category | undefined>;
+  createCategory(category: InsertCategory): Promise<Category>;
+
+  // Article operations
+  getArticles(limit?: number, offset?: number): Promise<Article[]>;
+  getArticlesByCategory(categoryId: number, limit?: number, offset?: number): Promise<Article[]>;
+  getArticleBySlug(slug: string): Promise<Article | undefined>;
+  getFeaturedArticles(limit?: number): Promise<Article[]>;
+  getMostViewedArticles(limit?: number): Promise<Article[]>;
+  createArticle(article: InsertArticle): Promise<Article>;
+  incrementArticleViews(id: number): Promise<Article | undefined>;
+
+  // Analyst operations
+  getAnalysts(): Promise<Analyst[]>;
+  getAnalyst(id: number): Promise<Analyst | undefined>;
+  createAnalyst(analyst: InsertAnalyst): Promise<Analyst>;
+
+  // Analysis operations
+  getAnalysisArticles(limit?: number): Promise<Analysis[]>;
+  getAnalysisBySlug(slug: string): Promise<Analysis | undefined>;
+  createAnalysis(analysis: InsertAnalysis): Promise<Analysis>;
+
+  // Video operations
+  getVideos(limit?: number): Promise<Video[]>;
+  getFeaturedVideo(): Promise<Video | undefined>;
+  createVideo(video: InsertVideo): Promise<Video>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private categories: Map<number, Category>;
+  private articles: Map<number, Article>;
+  private analysts: Map<number, Analyst>;
+  private analysis: Map<number, Analysis>;
+  private videos: Map<number, Video>;
+  
+  private userId: number = 1;
+  private categoryId: number = 1;
+  private articleId: number = 1;
+  private analystId: number = 1;
+  private analysisId: number = 1;
+  private videoId: number = 1;
+
+  constructor() {
+    this.users = new Map();
+    this.categories = new Map();
+    this.articles = new Map();
+    this.analysts = new Map();
+    this.analysis = new Map();
+    this.videos = new Map();
+    
+    // Initialize with default categories
+    this.initializeData();
+  }
+
+  private initializeData() {
+    // Create default categories
+    const categoryData: InsertCategory[] = [
+      { name: "World", slug: "world" },
+      { name: "Business", slug: "business" },
+      { name: "Technology", slug: "technology" },
+      { name: "Health", slug: "health" },
+      { name: "Entertainment", slug: "entertainment" },
+      { name: "Sports", slug: "sports" },
+      { name: "Science", slug: "science" },
+      { name: "Environment", slug: "environment" },
+      { name: "Analysis", slug: "analysis" }
+    ];
+    
+    categoryData.forEach(category => this.createCategory(category));
+    
+    // Create sample articles for each category (in a real app, this would come from a database)
+    // For this demo, we're adding articles with realistic supply chain news titles and content
+    const worldCategory = Array.from(this.categories.values()).find(c => c.slug === "world");
+    const businessCategory = Array.from(this.categories.values()).find(c => c.slug === "business");
+    const technologyCategory = Array.from(this.categories.values()).find(c => c.slug === "technology");
+    const healthCategory = Array.from(this.categories.values()).find(c => c.slug === "health");
+    const entertainmentCategory = Array.from(this.categories.values()).find(c => c.slug === "entertainment");
+    const sportsCategory = Array.from(this.categories.values()).find(c => c.slug === "sports");
+    const scienceCategory = Array.from(this.categories.values()).find(c => c.slug === "science");
+    const environmentCategory = Array.from(this.categories.values()).find(c => c.slug === "environment");
+    const analysisCategory = Array.from(this.categories.values()).find(c => c.slug === "analysis");
+    
+    if (worldCategory && businessCategory && technologyCategory && healthCategory && 
+        environmentCategory && entertainmentCategory && sportsCategory && scienceCategory && analysisCategory) {
+      // WORLD CATEGORY - Latest articles
+      this.createArticle({
+        title: "Red Sea Crisis Triggers Global Supply Chain Rerouting",
+        slug: "red-sea-crisis-global-supply-chain-rerouting",
+        summary: "Escalating tensions in the Red Sea force shipping companies to adopt costly detours around Africa, adding weeks to delivery times and billions in extra costs.",
+        content: "Ongoing security concerns in the Red Sea have forced major shipping companies to reroute vessels around the Cape of Good Hope, adding up to 14 days to journey times and significantly increasing transportation costs. The crisis, which began in late 2023, continues to disrupt one of the world's most critical maritime trade routes.\n\n\"The situation has created a logistics nightmare,\" explains Martin Larsen, chief analyst at Global Shipping Research. \"We're seeing delivery delays cascade through supply chains across Europe, Asia, and North America.\"\n\nAccording to industry data, over 80% of container ships that would normally transit the Suez Canal are now taking the longer African route, resulting in an estimated $10 billion in additional shipping costs since January 2024. These costs are beginning to impact consumer prices for everything from electronics to clothing.\n\n\"Companies are facing difficult decisions about inventory management, pricing strategies, and transportation alternatives,\" notes Larsen. \"Many are increasing buffer stock levels, which ties up capital but helps mitigate delivery uncertainties.\"",
+        imageUrl: "https://images.unsplash.com/photo-1494412651409-8963ce7935a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+        categoryId: worldCategory.id,
+        featured: true,
+        publishedAt: new Date()
+      });
+      
+      this.createArticle({
+        title: "Panama Canal Drought Creates New Global Trade Bottleneck",
+        slug: "panama-canal-drought-global-trade-bottleneck",
+        summary: "Record low water levels slash Panama Canal capacity by 40%, forcing companies to seek alternative routes for trans-American shipments.",
+        content: "The Panama Canal, a vital artery connecting the Atlantic and Pacific Oceans, is operating at drastically reduced capacity due to historic drought conditions. Canal authorities have been forced to limit daily transits and reduce maximum ship draft, creating backlogs and disrupting global shipping patterns.\n\n\"The situation is unprecedented in the canal's modern history,\" says Elena Dominguez, regional logistics coordinator for Latin American trade. \"Ships are waiting up to three weeks for passage, compared to the normal 24-48 hours.\"\n\nThe crisis has particularly impacted grain shipments from the U.S. to Asia and liquefied natural gas (LNG) carriers. Many vessels are being diverted to alternative routes, including the longer journey around South America's Cape Horn or intermodal options using rail across the U.S.\n\nMeteorologists attribute the drought to a particularly severe El Niño weather pattern, with concerns that climate change may make such events more frequent and intense in coming years. Canal authorities have implemented water conservation measures and are accelerating plans for new reservoirs, but experts warn that a full recovery depends on the upcoming rainy season.",
+        imageUrl: "https://images.unsplash.com/photo-1565264685538-c83c255de90a?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        categoryId: worldCategory.id,
+        featured: false,
+        publishedAt: new Date(Date.now() - 11 * 60 * 60 * 1000) // 11 hours ago
+      });
+      
+      this.createArticle({
+        title: "China-Taiwan Tensions Raise Supply Chain Concerns",
+        slug: "china-taiwan-tensions-supply-chain-concerns",
+        summary: "Heightened geopolitical friction in East Asia has companies scrambling to develop contingency plans for critical semiconductor supplies.",
+        content: "Rising diplomatic and military tensions between China and Taiwan are forcing multinational companies to reevaluate their dependency on Taiwanese semiconductor manufacturing. With Taiwan producing over 60% of the world's microchips, including 90% of advanced processors, the potential for disruption has triggered unprecedented risk-mitigation efforts.\n\n\"We're seeing companies across sectors - from automotive to consumer electronics - developing formal China-Taiwan contingency plans,\" reports David Wong, supply chain risk specialist at Global Strategy Group. \"This includes identifying alternative suppliers, building inventory buffers, and in some cases, supporting new manufacturing capacity in other regions.\"\n\nThe U.S. and European Union have both recently announced major initiatives to boost domestic semiconductor production, with the CHIPS Act providing $52 billion in subsidies for American manufacturing. However, industry experts caution that building competitive semiconductor fabrication capacity takes years.\n\n\"The reality is there's no quick fix,\" Wong explains. \"Advanced chip manufacturing requires specialized expertise that's been concentrated in Taiwan for decades. Companies need to prepare for potential disruptions in the near term while these longer-term diversification efforts mature.\"",
+        imageUrl: "https://images.unsplash.com/photo-1591288908398-84de5a1d3704?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        categoryId: worldCategory.id,
+        featured: false,
+        publishedAt: new Date(Date.now() - 22 * 60 * 60 * 1000) // 22 hours ago
+      });
+      
+      // BUSINESS CATEGORY - Latest articles
+      this.createArticle({
+        title: "Amazon Launches Massive Supply Chain Expansion Initiative",
+        slug: "amazon-supply-chain-expansion-initiative",
+        summary: "E-commerce giant to invest $15 billion in new fulfillment centers, transportation fleet, and proprietary delivery network.",
+        content: "Amazon has unveiled an ambitious $15 billion supply chain expansion plan designed to reduce delivery times and decrease dependency on third-party logistics providers. The multi-year initiative includes constructing 23 new fulfillment centers across North America and Europe, expanding its air cargo fleet, and enhancing last-mile delivery capabilities.\n\n\"This represents a fundamental shift in our logistics strategy,\" says Sarah Johnson, Amazon's Senior VP of Operations. \"By controlling more of our supply chain infrastructure, we can better manage costs while providing faster, more reliable delivery options for customers.\"\n\nThe company plans to add 20 aircraft to its Amazon Air fleet, bringing the total to 105 planes, and will expand its network of sortation centers designed to streamline package flow and optimize routing efficiency.\n\nIndustry analysts view the move as a direct challenge to established carriers like UPS and FedEx. \"Amazon is essentially building a self-contained logistics ecosystem,\" explains logistics consultant Michael Chen. \"This further blurs the line between retailer and delivery provider, potentially changing the competitive landscape for the entire e-commerce sector.\"",
+        imageUrl: "https://images.unsplash.com/photo-1540544093-9d5d2d9c8c97?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        categoryId: businessCategory.id,
+        featured: false,
+        publishedAt: new Date(Date.now() - 3 * 60 * 60 * 1000) // 3 hours ago
+      });
+
+      this.createArticle({
+        title: "Shipping Alliance Collapses, Triggering Industry Realignment",
+        slug: "shipping-alliance-collapses-industry-realignment",
+        summary: "Major container shipping lines announce end to decade-long partnership agreement, signaling potential volatility in ocean freight markets.",
+        content: "The Ocean Alliance, one of the world's largest shipping partnerships, will dissolve at the end of this year following the surprise withdrawal of two key members. The collapse ends a decade-long arrangement that coordinated vessel sharing and port scheduling among five major carriers controlling approximately 35% of global container capacity.\n\n\"This represents a seismic shift in the container shipping landscape,\" explains maritime economist Patricia Vega. \"We're likely entering a period of significant competitive realignment, which could bring both opportunities and challenges for shippers.\"\n\nThe alliance dissolution comes amid growing regulatory scrutiny of shipping line cooperation agreements, with antitrust authorities in both the EU and US expressing concerns about market concentration.\n\nIndustry experts anticipate a temporary period of route network adjustments and potential capacity fluctuations as carriers reposition their fleets. Some predict the changes could trigger new rate volatility in the already unpredictable ocean freight market.\n\n\"Companies relying on these shipping lanes should proactively engage with carriers to understand how service offerings will evolve,\" advises Vega. \"This is a good time to review transportation contingency plans and potentially diversify shipping options.\"",
+        imageUrl: "https://images.unsplash.com/photo-1494412651409-8963ce7935a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        categoryId: businessCategory.id,
+        featured: false,
+        publishedAt: new Date(Date.now() - 8 * 60 * 60 * 1000) // 8 hours ago
+      });
+
+      this.createArticle({
+        title: "Retail Giants Battle for Warehouse Space as E-commerce Booms",
+        slug: "retail-giants-battle-warehouse-space-ecommerce",
+        summary: "Unprecedented demand for distribution centers drives industrial real estate prices to record highs in major markets.",
+        content: "Competition for prime warehouse and distribution center locations has intensified to unprecedented levels as retailers race to expand their e-commerce fulfillment capabilities. Industrial real estate prices in top logistics hubs have surged more than 40% since 2021, with vacancy rates in key markets falling below 2%.\n\n\"We're seeing bidding wars for strategically located facilities, particularly those with good highway access and proximity to population centers,\" reports commercial real estate specialist Thomas Wright. \"Some companies are signing leases on spaces still under construction and paying premiums to secure prime locations.\"\n\nThe trend is particularly acute in urban fulfillment centers supporting same-day delivery operations. These facilities, typically smaller than traditional distribution centers but strategically located near dense population areas, have seen rent increases of over 50% in cities like Los Angeles, New York, and Chicago.\n\nMajor retailers are adopting various strategies to secure needed space, including converting former department stores into mini-fulfillment centers, entering into sale-leaseback arrangements, and forming strategic partnerships with industrial property developers to secure priority access to new construction.",
+        imageUrl: "https://images.unsplash.com/photo-1566686209349-1e6657933a3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        categoryId: businessCategory.id,
+        featured: false,
+        publishedAt: new Date(Date.now() - 15 * 60 * 60 * 1000) // 15 hours ago
+      });
+
+      this.createArticle({
+        title: "Supply Chain Startups Attract Record Venture Capital Investment",
+        slug: "supply-chain-startups-venture-capital-investment",
+        summary: "Logistics innovation companies secure $15.2 billion in funding as investors target technologies addressing global supply challenges.",
+        content: "Venture capital investment in supply chain technology startups reached an all-time high of $15.2 billion in the first half of 2024, nearly double the amount raised during the same period last year. The surge reflects growing recognition of logistics modernization as a critical business priority across industries.\n\n\"We're seeing unprecedented investor interest in companies addressing fundamental supply chain challenges,\" says Maya Richardson, partner at Horizon Ventures, which has invested in several logistics startups. \"Technologies that improve visibility, resilience, and efficiency are particularly attractive given ongoing global disruptions.\"\n\nFunding has concentrated in several key areas, including predictive analytics for demand forecasting, robotics for warehouse automation, and blockchain solutions for supply chain transparency. Companies focusing on sustainable logistics solutions have also seen significant investment growth.\n\n\"The traditional supply chain model proved vulnerable during recent disruptions,\" explains Richardson. \"Investors recognize that companies with more agile, data-driven approaches represent both the future of logistics and compelling investment opportunities.\"",
+        imageUrl: "https://images.unsplash.com/photo-1579225663317-c0505f0d0b1e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        categoryId: businessCategory.id,
+        featured: false,
+        publishedAt: new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 day ago
+      });
+      
+      // TECHNOLOGY CATEGORY - Latest articles
+      this.createArticle({
+        title: "Digital Twins Revolutionize Supply Chain Planning",
+        slug: "digital-twins-revolutionize-supply-chain-planning",
+        summary: "Virtual replicas of physical supply chains enable real-time simulation and optimization, reducing disruption impact by up to 60%.",
+        content: "Leading manufacturers and logistics providers are increasingly adopting 'digital twin' technology to create virtual replicas of their entire supply chains, enabling unprecedented visibility and simulation capabilities. These sophisticated digital models integrate real-time data from IoT sensors, ERP systems, and external sources to create living simulations of physical operations.\n\n\"Digital twins represent a fundamental advancement in how we visualize and manage complex supply networks,\" explains Dr. James Chen, supply chain technology researcher at MIT. \"Companies can now test the impact of disruptions or strategic changes before implementing them in the real world.\"\n\nEarly adopters report significant benefits, including a 30-60% reduction in disruption impact through faster scenario planning and response. The technology has proven particularly valuable for modeling pandemic-related challenges and forecasting recovery times.\n\n\"What makes digital twins so powerful is their ability to integrate diverse data streams into a cohesive, real-time representation,\" says Sarah Peterson, CTO at supply chain software provider Nexus Solutions. \"Companies can visualize interdependencies that were previously hidden and anticipate cascading effects from disruptions before they materialize.\"",
+        imageUrl: "https://images.unsplash.com/photo-1581092921461-7289bd80a0f4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        categoryId: technologyCategory.id,
+        featured: false,
+        publishedAt: new Date(Date.now() - 6 * 60 * 60 * 1000) // 6 hours ago
+      });
+
+      this.createArticle({
+        title: "Quantum Computing Makes Breakthrough in Supply Chain Optimization",
+        slug: "quantum-computing-breakthrough-supply-chain-optimization",
+        summary: "New algorithm solves complex logistics problems 100x faster than conventional methods, promising radical efficiency improvements.",
+        content: "Researchers have developed a quantum computing algorithm capable of solving complex supply chain optimization problems exponentially faster than classical computing approaches. The breakthrough, announced by a joint industry-academic team, promises to revolutionize how companies plan routes, manage inventory, and allocate resources.\n\n\"This represents a genuine quantum advantage for a real-world business problem,\" explains Dr. Mira Patel, quantum computing specialist at Tech Horizons Research. \"The algorithm can optimize distribution networks with millions of possible combinations in minutes instead of days.\"\n\nThe technology is particularly effective at solving complex routing problems with multiple constraints - for example, optimizing truck routes while considering delivery windows, vehicle capacity, driver hours, and fuel efficiency. Such problems quickly become computationally overwhelming for traditional systems as variables increase.\n\nWhile commercial quantum hardware remains limited, several major logistics companies have already begun testing hybrid approaches that combine quantum and classical computing. Industry analysts predict practical business applications could begin delivering value within 2-3 years as quantum hardware continues to mature.",
+        imageUrl: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        categoryId: technologyCategory.id,
+        featured: false,
+        publishedAt: new Date(Date.now() - 18 * 60 * 60 * 1000) // 18 hours ago
+      });
+
+      this.createArticle({
+        title: "Autonomous Trucking Networks Launch Commercial Operations",
+        slug: "autonomous-trucking-networks-commercial-operations",
+        summary: "Self-driving freight trucks begin regular operations on major interstate corridors, promising reduced costs and improved safety.",
+        content: "The era of commercial autonomous trucking has arrived with the launch of regular driverless freight operations on major highway corridors in the southwestern United States. While human safety drivers remain present for portions of the journey, the trucks navigate interstate highways autonomously, transferring cargo between strategically located terminals.\n\n\"This represents a watershed moment for freight transportation,\" says Michael Rodriguez, logistics automation analyst. \"We're transitioning from technology demonstrations to actual commercial operations that generate revenue and deliver customer cargo.\"\n\nThe autonomous network focuses on long-haul highway routes between transfer hubs, where local drivers take over for final delivery. This approach leverages the technology's strengths while avoiding the complexities of urban navigation.\n\nEarly data suggests the autonomous trucks are delivering 15-20% fuel efficiency improvements through optimized acceleration and braking, in addition to consistent 24/7 operations that aren't constrained by hours-of-service regulations. Industry forecasts project that up to 40% of long-haul trucking could be automated by 2030, significantly reshaping the economics of freight transportation.",
+        imageUrl: "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        categoryId: technologyCategory.id,
+        featured: false,
+        publishedAt: new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 day ago
+      });
+      
+      this.createArticle({
+        title: "Predictive Analytics Transforms Inventory Management",
+        slug: "predictive-analytics-transforms-inventory-management",
+        summary: "AI-powered demand forecasting systems reduce inventory costs by 25% while improving product availability and reducing waste.",
+        content: "Advanced predictive analytics solutions powered by machine learning are transforming inventory management across retail and manufacturing sectors. These systems process vast amounts of data - from historical sales and seasonal patterns to social media trends and weather forecasts - to predict demand with unprecedented accuracy.\n\n\"The days of simple time-series forecasting are over,\" explains inventory optimization specialist Daniel Kim. \"Today's algorithms can identify subtle correlations across hundreds of variables that humans would never detect.\"\n\nRetailers implementing these solutions report 15-25% reductions in inventory carrying costs while simultaneously improving product availability. The technology has proven particularly valuable for managing fashion merchandise, seasonal goods, and products with short shelf lives.\n\n\"The improvement in forecasting perishable goods has been revolutionary for our grocery clients,\" says Kim. \"We're seeing food waste reductions of 30-40% while actually increasing on-shelf availability. That's a win for sustainability and the bottom line.\"\n\nAs these systems mature, they're increasingly being integrated with automated replenishment systems that can trigger orders without human intervention, further streamlining the supply chain and reducing manual workload.",
+        imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        categoryId: technologyCategory.id,
+        featured: false,
+        publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
+      });
+      
+      // HEALTH CATEGORY - Latest articles
+      this.createArticle({
+        title: "Medical Supply Chain Modernization Accelerates Post-Pandemic",
+        slug: "medical-supply-chain-modernization-post-pandemic",
+        summary: "Healthcare facilities implement advanced inventory management systems to prevent critical shortages of essential supplies.",
+        content: "Healthcare institutions across the country are rapidly modernizing their supply chain operations with digital tools and resilient sourcing strategies in response to lessons learned during the pandemic. These initiatives aim to prevent the critical shortages of personal protective equipment, pharmaceuticals, and medical devices that many facilities experienced in 2020.\n\n\"The healthcare supply chain was designed for efficiency, not resiliency,\" explains Dr. Elena Martinez, Chief Supply Chain Officer at Northeast Medical Center. \"The pandemic exposed dangerous vulnerabilities that we're now systematically addressing with new approaches to sourcing, inventory management, and demand forecasting.\"\n\nKey improvements include the implementation of real-time inventory tracking systems with predictive analytics capabilities, diversification of supplier networks with emphasis on regional manufacturing, and establishment of strategic reserves for critical supplies. Many institutions are also adopting blockchain technology to enhance traceability and transparency throughout their supply networks.\n\nIndustry experts predict that these changes will significantly improve healthcare system preparedness for future disruptions while potentially reducing long-term costs through improved inventory management and reduced waste.",
+        imageUrl: "https://images.unsplash.com/photo-1579154341098-e4e158cc7f55?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+        categoryId: healthCategory.id,
+        featured: false,
+        publishedAt: new Date(Date.now() - 4 * 60 * 60 * 1000) // 4 hours ago
+      });
+      
+      // Create analysts
+      this.createAnalyst({
+        name: "Sarah Johnson",
+        title: "Supply Chain Economist",
+        imageUrl: "https://randomuser.me/api/portraits/women/44.jpg"
+      });
+      
+      this.createAnalyst({
+        name: "Michael Chen",
+        title: "Logistics Director",
+        imageUrl: "https://randomuser.me/api/portraits/men/32.jpg"
+      });
+      
+      // Create analysis articles
+      const sarahAnalyst = Array.from(this.analysts.values()).find(a => a.name === "Sarah Johnson");
+      const michaelAnalyst = Array.from(this.analysts.values()).find(a => a.name === "Michael Chen");
+      
+      if (sarahAnalyst && michaelAnalyst) {
+        this.createAnalysis({
+          title: "Why Resilience Will Define Supply Chains in the Next Decade",
+          slug: "resilience-define-supply-chains",
+          content: "The past three years have demonstrated the fragility of global supply chains in stark terms. From pandemic disruptions to geopolitical conflicts and extreme weather events, organizations have faced a relentless series of challenges to their operations.\n\nAs we look ahead to the next decade, it's clear that resilience – not just efficiency – will become the defining characteristic of successful supply chain strategy. This represents a fundamental shift in thinking.\n\nFor decades, supply chain optimization focused primarily on cost reduction, with strategies like just-in-time inventory, supplier consolidation, and offshoring driving decision-making. While these approaches delivered significant financial benefits during periods of stability, they also created vulnerabilities that became apparent during disruptions.\n\nMoving forward, organizations will need to balance efficiency with redundancy, concentration with diversification, and cost with resilience. This doesn't mean abandoning efficiency principles, but rather implementing them within a framework that acknowledges and mitigates systemic risks.\n\nKey components of a resilience-focused strategy include supplier diversification across geographic regions, strategic inventory buffering for critical components, investment in visibility technologies, and the development of contingency plans for various disruption scenarios.\n\nCompanies that master this balance will not only survive future disruptions but may find competitive advantage in their ability to maintain service levels when competitors cannot.",
+          analystId: sarahAnalyst.id,
+          publishedAt: new Date()
+        });
+        
+        this.createAnalysis({
+          title: "The Case for Reshoring: When Local Production Makes Financial Sense",
+          slug: "reshoring-local-production-financial-sense",
+          content: "The pendulum of manufacturing location strategy appears to be swinging back toward domestic production after decades of offshoring. While labor cost differentials drove production to Asia and other low-cost regions throughout the 1990s and 2000s, a more complex calculation is now favoring reshoring for certain categories of products.\n\nThis shift is driven by multiple factors beyond the supply chain disruptions of recent years. Rising wages in traditional manufacturing hubs like China have eroded the labor cost advantage. Simultaneously, automation technologies have reduced the labor component of total manufacturing costs, making proximity to markets relatively more important.\n\nAdditional considerations include increased transportation costs, intellectual property protection concerns, and growing consumer preference for locally-produced goods. Government incentives for domestic manufacturing, particularly in strategic sectors like semiconductors and medical supplies, are further accelerating this trend.\n\nHowever, reshoring isn't appropriate for all products. The decision requires careful analysis of total landed costs, including factors such as:\n\n- Labor intensity of production\n- Transportation costs relative to product value\n- Inventory carrying costs\n- Quality control considerations\n- Market response time requirements\n- Automation potential\n\nProducts with high automation potential, significant transportation costs, rapid innovation cycles, or custom configurations tend to be the best candidates for reshoring. Conversely, highly labor-intensive products with stable designs and low transportation costs relative to value may still benefit from global sourcing.\n\nUltimately, the optimal approach for most companies will be a regionalized strategy, with production capabilities distributed across multiple geographies to serve local markets while maintaining flexibility and redundancy.",
+          analystId: michaelAnalyst.id,
+          publishedAt: new Date()
+        });
+      }
+      
+      // Create a featured video
+      this.createVideo({
+        title: "Inside the World's Busiest Shipping Port: A Special Report",
+        description: "Our correspondent gets unprecedented access to operations at the Port of Shanghai.",
+        thumbnailUrl: "https://images.unsplash.com/photo-1579532537598-459ecdaf39cc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        videoUrl: "https://example.com/videos/port-of-shanghai",
+        featured: true,
+        publishedAt: new Date()
+      });
+    }
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.userId++;
+    const user: User = { ...insertUser, id };
+    this.users.set(id, user);
+    return user;
+  }
+
+  // Category operations
+  async getCategories(): Promise<Category[]> {
+    return Array.from(this.categories.values());
+  }
+
+  async getCategoryBySlug(slug: string): Promise<Category | undefined> {
+    return Array.from(this.categories.values()).find(
+      (category) => category.slug === slug,
+    );
+  }
+
+  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+    const id = this.categoryId++;
+    const category: Category = { ...insertCategory, id };
+    this.categories.set(id, category);
+    return category;
+  }
+
+  // Article operations
+  async getArticles(limit: number = 10, offset: number = 0): Promise<Article[]> {
+    return Array.from(this.articles.values())
+      .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
+      .slice(offset, offset + limit);
+  }
+
+  async getArticlesByCategory(categoryId: number, limit: number = 10, offset: number = 0): Promise<Article[]> {
+    return Array.from(this.articles.values())
+      .filter(article => article.categoryId === categoryId)
+      .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
+      .slice(offset, offset + limit);
+  }
+
+  async getArticleBySlug(slug: string): Promise<Article | undefined> {
+    return Array.from(this.articles.values()).find(
+      (article) => article.slug === slug,
+    );
+  }
+
+  async getFeaturedArticles(limit: number = 1): Promise<Article[]> {
+    return Array.from(this.articles.values())
+      .filter(article => article.featured)
+      .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
+      .slice(0, limit);
+  }
+
+  async getMostViewedArticles(limit: number = 5): Promise<Article[]> {
+    return Array.from(this.articles.values())
+      .sort((a, b) => b.views - a.views)
+      .slice(0, limit);
+  }
+
+  async createArticle(insertArticle: InsertArticle): Promise<Article> {
+    const id = this.articleId++;
+    const article: Article = { 
+      ...insertArticle, 
+      id,
+      views: 0
+    };
+    this.articles.set(id, article);
+    return article;
+  }
+
+  async incrementArticleViews(id: number): Promise<Article | undefined> {
+    const article = this.articles.get(id);
+    if (article) {
+      const updatedArticle = { ...article, views: article.views + 1 };
+      this.articles.set(id, updatedArticle);
+      return updatedArticle;
+    }
+    return undefined;
+  }
+
+  // Analyst operations
+  async getAnalysts(): Promise<Analyst[]> {
+    return Array.from(this.analysts.values());
+  }
+
+  async getAnalyst(id: number): Promise<Analyst | undefined> {
+    return this.analysts.get(id);
+  }
+
+  async createAnalyst(insertAnalyst: InsertAnalyst): Promise<Analyst> {
+    const id = this.analystId++;
+    const analyst: Analyst = { ...insertAnalyst, id };
+    this.analysts.set(id, analyst);
+    return analyst;
+  }
+
+  // Analysis operations
+  async getAnalysisArticles(limit: number = 2): Promise<Analysis[]> {
+    return Array.from(this.analysis.values())
+      .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
+      .slice(0, limit);
+  }
+
+  async getAnalysisBySlug(slug: string): Promise<Analysis | undefined> {
+    return Array.from(this.analysis.values()).find(
+      (analysis) => analysis.slug === slug,
+    );
+  }
+
+  async createAnalysis(insertAnalysis: InsertAnalysis): Promise<Analysis> {
+    const id = this.analysisId++;
+    const analysis: Analysis = { ...insertAnalysis, id };
+    this.analysis.set(id, analysis);
+    return analysis;
+  }
+
+  // Video operations
+  async getVideos(limit: number = 5): Promise<Video[]> {
+    return Array.from(this.videos.values())
+      .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
+      .slice(0, limit);
+  }
+
+  async getFeaturedVideo(): Promise<Video | undefined> {
+    return Array.from(this.videos.values())
+      .find(video => video.featured);
+  }
+
+  async createVideo(insertVideo: InsertVideo): Promise<Video> {
+    const id = this.videoId++;
+    const video: Video = { ...insertVideo, id };
+    this.videos.set(id, video);
+    return video;
+  }
+}
+
+export const storage = new MemStorage();
