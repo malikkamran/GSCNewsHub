@@ -53,10 +53,15 @@ export default function AdBanner({ slot, format, className = "" }: AdBannerProps
   return (
     <div 
       ref={adRef} 
-      className={`bg-[#f0f0f0] text-[#666] flex justify-center items-center text-center border border-[#ddd] ${adClass} ${className}`}
+      className={`bg-[#F5F5F5] text-[#666] flex justify-center items-center text-center ${adClass} ${className}`}
       aria-label="Advertisement"
     >
-      <p className="text-sm">{adText}</p>
+      <div className="flex flex-col items-center">
+        <p className="text-xs mb-1">ADVERTISEMENT</p>
+        <div className="bg-gray-200 w-3/4 h-12 flex items-center justify-center rounded">
+          <p className="text-xs text-gray-500">{adText}</p>
+        </div>
+      </div>
     </div>
   );
 }

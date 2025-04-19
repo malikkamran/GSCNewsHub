@@ -9,8 +9,8 @@ export default function MostRead() {
   });
   
   return (
-    <section className="bg-[#F8F8F8] p-4 mb-6">
-      <h2 className="text-xl font-bold mb-4 font-roboto border-b border-[#DDDDDD] pb-2">Most Read</h2>
+    <section className="bg-[#F6F6F6] p-4 mb-6">
+      <h2 className="text-xl font-bold mb-4 font-roboto border-b-2 border-[#BB1919] pb-2 inline-block">Most Read</h2>
       <div className="space-y-4">
         {isLoading ? (
           [...Array(5)].map((_, index) => (
