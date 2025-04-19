@@ -131,9 +131,6 @@ export default function Footer() {
               <Link href="/cookies">
                 <span className="hover:text-white cursor-pointer">Cookies</span>
               </Link>
-              <Link href="/accessibility">
-                <span className="hover:text-white cursor-pointer">Accessibility Help</span>
-              </Link>
               <Link href="/contact">
                 <span className="hover:text-white cursor-pointer">Contact Us</span>
               </Link>
