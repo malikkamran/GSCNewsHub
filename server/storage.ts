@@ -597,15 +597,9 @@ export class MemStorage implements IStorage {
   async createArticle(insertArticle: InsertArticle): Promise<Article> {
     const id = this.articleId++;
     
-    // If this article is set as featured, unset any other featured articles
+    // No longer need to unset other featured articles as we want to support multiple featured articles
     if (insertArticle.featured) {
-      console.log("Creating a new featured article - unsetting previous featured articles");
-      Array.from(this.articles.values()).forEach(article => {
-        if (article.featured) {
-          article.featured = false;
-          this.articles.set(article.id, article);
-        }
-      });
+      console.log("Creating a new featured article");
     }
     
     const article: Article = { 
@@ -627,15 +621,9 @@ export class MemStorage implements IStorage {
       return undefined;
     }
     
-    // Check if this article is being set as featured
+    // No longer need to unset other featured articles, as we want to allow up to 3 featured articles
     if (insertArticle.featured && !existingArticle.featured) {
-      console.log(`Setting article ${id} as featured - unsetting previous featured articles`);
-      Array.from(this.articles.values()).forEach(article => {
-        if (article.featured && article.id !== id) {
-          article.featured = false;
-          this.articles.set(article.id, article);
-        }
-      });
+      console.log(`Setting article ${id} as featured`);
     }
     
     const updatedArticle: Article = { 
