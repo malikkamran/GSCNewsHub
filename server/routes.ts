@@ -659,6 +659,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin user management routes
+  app.get("/api/users", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: "Forbidden: Admin access required" });
+      }
+      
+      const users = await storage.getAllUsers();
+      
+      // Remove passwords from response
+      const usersWithoutPasswords = users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      
+      return res.json(usersWithoutPasswords);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  });
+  
+  app.post("/api/users", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: "Forbidden: Admin access required" });
+      }
+      
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Check if username already exists
+      const existingUsername = await storage.getUserByUsername(userData.username);
+      if (existingUsername) {
+        return res.status(400).json({ success: false, message: "Username already taken" });
+      }
+      
+      // Check if email already exists
+      if (userData.email) {
+        const existingEmail = await storage.getUserByEmail(userData.email);
+        if (existingEmail) {
+          return res.status(400).json({ success: false, message: "Email already registered" });
+        }
+      }
+      
+      // Create new user with role
+      const newUser = await storage.createUser(userData);
+      
+      // Return the new user without password
+      const { password: _, ...userWithoutPassword } = newUser;
+      return res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, message: "Invalid user data", errors: error.errors });
+      }
+      return res.status(500).json({ success: false, message: "Failed to create user" });
+    }
+  });
+  
+  app.put("/api/users/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: "Forbidden: Admin access required" });
+      }
+      
+      const userId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      const updatedUser = await storage.updateUser(userId, updateData);
+      if (!updatedUser) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+      
+      // Don't send the password
+      const { password: _, ...userWithoutPassword } = updatedUser;
+      return res.json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, message: "Invalid user data", errors: error.errors });
+      }
+      return res.status(500).json({ success: false, message: "Failed to update user" });
+    }
+  });
+  
+  app.delete("/api/users/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: "Forbidden: Admin access required" });
+      }
+      
+      const userId = parseInt(req.params.id);
+      
+      // Don't allow deleting the current user
+      if (userId === currentUser.id) {
+        return res.status(400).json({ success: false, message: "Cannot delete your own account" });
+      }
+      
+      const success = await storage.deleteUser(userId);
+      if (!success) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+      
+      return res.json({ success: true });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: "Failed to delete user" });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
   

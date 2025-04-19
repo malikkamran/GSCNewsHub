@@ -608,6 +608,7 @@ export class MemStorage implements IStorage {
       views: 0,
       featured: insertArticle.featured || false,
       status: insertArticle.status || "published",
+      publishedBy: insertArticle.publishedBy || null,
       publishedAt: insertArticle.publishedAt || new Date()
     };
     this.articles.set(id, article);
@@ -633,6 +634,7 @@ export class MemStorage implements IStorage {
       featured: insertArticle.featured ?? existingArticle.featured ?? false,
       // Ensure status is updated when it's explicitly provided in the update
       status: insertArticle.status !== undefined ? insertArticle.status : existingArticle.status || "published",
+      publishedBy: insertArticle.publishedBy || existingArticle.publishedBy || null,
       publishedAt: insertArticle.publishedAt || existingArticle.publishedAt
     };
     
