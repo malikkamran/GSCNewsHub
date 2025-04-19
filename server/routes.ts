@@ -27,9 +27,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user exists and password matches
       if (user && user.password === password) { // In a real app, use bcrypt for password hashing
-        // Set user in session (except password)
-        const { password: _, ...userWithoutPassword } = user;
-        req.session.user = userWithoutPassword;
+        // Set global auth state
+        isLoggedIn = true;
+        currentUser = { ...user, password: undefined };
         
         return res.json({ success: true });
       }
@@ -42,21 +42,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/auth/logout", (req: Request, res: Response) => {
-    // Destroy session
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ success: false, message: "Failed to logout" });
-      }
-      
-      res.clearCookie('connect.sid');
-      return res.json({ success: true });
-    });
+    // Clear auth state
+    isLoggedIn = false;
+    currentUser = null;
+    return res.json({ success: true });
   });
   
   app.get("/api/auth/check", (req: Request, res: Response) => {
     // Check if user is authenticated
-    if (req.session && req.session.user) {
-      return res.json({ authenticated: true, user: req.session.user });
+    if (isLoggedIn && currentUser) {
+      return res.json({ authenticated: true, user: currentUser });
     }
     
     return res.json({ authenticated: false });

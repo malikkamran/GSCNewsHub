@@ -39,14 +39,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await apiRequest("/api/auth/check", {
-          method: "GET",
-        });
-
-        if (!response.authenticated) {
+        const response = await fetch("/api/auth/check");
+        const data = await response.json();
+        
+        if (!data.authenticated) {
           navigate("/admin/login");
         } else {
-          setUsername(response.user?.username || "Admin");
+          setUsername(data.user?.username || "Admin");
         }
       } catch (error) {
         console.error("Auth check error:", error);
@@ -60,16 +59,29 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   // Handle logout
   const handleLogout = async () => {
     try {
-      await apiRequest("/api/auth/logout", {
+      const response = await fetch("/api/auth/logout", {
         method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
+      const data = await response.json();
       
-      navigate("/admin/login");
+      if (response.ok && data.success) {
+        toast({
+          title: "Logged out",
+          description: "You have been successfully logged out.",
+        });
+        
+        navigate("/admin/login");
+      } else {
+        toast({
+          title: "Logout error",
+          description: "An error occurred during logout. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Logout error:", error);
       toast({

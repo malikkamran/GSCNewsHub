@@ -45,7 +45,9 @@ export default function AdminLogin() {
     const checkAuth = async () => {
       try {
         const response = await fetch("/api/auth/check");
-        if (response.authenticated) {
+        const data = await response.json();
+        
+        if (data.authenticated) {
           navigate("/admin/dashboard");
         }
       } catch (error) {
@@ -72,10 +74,15 @@ export default function AdminLogin() {
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(data),
       });
 
-      if (response.success) {
+      const responseData = await response.json();
+
+      if (response.ok && responseData.success) {
         toast({
           title: "Login successful",
           description: "Welcome to the admin dashboard",
@@ -86,7 +93,7 @@ export default function AdminLogin() {
       } else {
         toast({
           title: "Login failed",
-          description: response.message || "Invalid username or password",
+          description: responseData.message || "Invalid username or password",
           variant: "destructive",
         });
       }
