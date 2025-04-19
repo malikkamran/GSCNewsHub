@@ -9,7 +9,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Redirect } from "wouter";
+import { Redirect, useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 
 // Login form schema
@@ -48,16 +48,11 @@ function LoginForm() {
   });
   
   function onSubmit(values: LoginValues) {
-    loginMutation.mutate(values, {
-      onSuccess: (user) => {
-        // Redirect based on user role
-        if (user.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/');
-        }
-      }
-    });
+    // Add a callback to redirect after successful login
+    loginMutation.mutate(values);
+    
+    // The redirection will be handled by the AuthPage component's condition
+    // which checks the user role and redirects accordingly
   }
   
   return (
