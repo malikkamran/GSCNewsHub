@@ -35,7 +35,7 @@ export default function Header() {
         </div>
       </div>
       
-      {/* Main red header */}
+      {/* Main header with logo and red background */}
       <div className="bg-[#BB1919]">
         <div className="container mx-auto px-4">
           {/* Logo and search */}
@@ -72,67 +72,71 @@ export default function Header() {
               <Menu />
             </Button>
           </div>
-          
-          {/* Main Navigation */}
-          <nav className="hidden md:block border-t border-b border-red-800 py-2">
-            <ul className="flex flex-wrap space-x-6 text-white" role="menubar">
+        </div>
+      </div>
+      
+      {/* Main Navigation - BBC style with white background */}
+      <div className="border-t border-[#BB1919] nav-menu">
+        <div className="container mx-auto px-4">
+          <nav className="hidden md:block">
+            <ul className="flex flex-wrap text-gray-800" role="menubar">
               <li role="none">
                 <Link href="/">
-                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                  <span className={`nav-item inline-block ${location === '/' ? 'nav-item-active' : ''}`} role="menuitem">
                     Home
                   </span>
                 </Link>
               </li>
               <li role="none">
                 <Link href="/category/logistics">
-                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/logistics' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                  <span className={`nav-item inline-block ${location === '/category/logistics' ? 'nav-item-active' : ''}`} role="menuitem">
                     Logistics
                   </span>
                 </Link>
               </li>
               <li role="none">
                 <Link href="/category/warehousing">
-                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/warehousing' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                  <span className={`nav-item inline-block ${location === '/category/warehousing' ? 'nav-item-active' : ''}`} role="menuitem">
                     Warehousing
                   </span>
                 </Link>
               </li>
               <li role="none">
                 <Link href="/category/procurement">
-                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/procurement' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                  <span className={`nav-item inline-block ${location === '/category/procurement' ? 'nav-item-active' : ''}`} role="menuitem">
                     Procurement
                   </span>
                 </Link>
               </li>
               <li role="none">
                 <Link href="/category/manufacturing">
-                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/manufacturing' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                  <span className={`nav-item inline-block ${location === '/category/manufacturing' ? 'nav-item-active' : ''}`} role="menuitem">
                     Manufacturing
                   </span>
                 </Link>
               </li>
               <li role="none">
                 <Link href="/category/tech-digital">
-                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/tech-digital' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                  <span className={`nav-item inline-block ${location === '/category/tech-digital' ? 'nav-item-active' : ''}`} role="menuitem">
                     Tech & Digital
                   </span>
                 </Link>
               </li>
               <li role="none">
                 <Link href="/category/sustainability">
-                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/sustainability' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                  <span className={`nav-item inline-block ${location === '/category/sustainability' ? 'nav-item-active' : ''}`} role="menuitem">
                     Sustainability
                   </span>
                 </Link>
               </li>
               <li role="none">
                 <Link href="/category/market-insights">
-                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/market-insights' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                  <span className={`nav-item inline-block ${location === '/category/market-insights' ? 'nav-item-active' : ''}`} role="menuitem">
                     Market Insights
                   </span>
                 </Link>
               </li>
-              <li role="none">
+              <li role="none" className="nav-item inline-block">
                 <NavDropdown 
                   label="More" 
                   items={[

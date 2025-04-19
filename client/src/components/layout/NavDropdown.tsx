@@ -47,7 +47,7 @@ export default function NavDropdown({ label, items }: NavDropdownProps) {
   return (
     <div ref={dropdownRef} className="relative">
       <button
-        className="font-medium hover:text-gray-200 flex items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+        className="font-medium flex items-center cursor-pointer focus:outline-none"
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="true"
         aria-expanded={isOpen}

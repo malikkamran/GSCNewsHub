@@ -4,13 +4,41 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Navigation menu custom styling */
+.nav-menu {
+  background-color: white;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.nav-item {
+  padding: 0.75rem 1.25rem;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.nav-item:hover {
+  background-color: #f0f0f0;
+}
+
+.nav-item-active {
+  background-color: #BB1919;
+  color: white;
+  border-radius: 4px;
+}
+
+.nav-item-active:hover {
+  background-color: #A00000;
+  color: white;
+}
+
 @layer base {
   * {
     @apply border-border;
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-white text-foreground;
   }
 
   h1, h2, h3, h4, h5, h6 {
