@@ -81,7 +81,7 @@ export default function CategoryPage() {
                     article={article} 
                     category={category}
                     size="large"
-                    showCategory={false}
+                    showCategory={true}
                     showSummary={true}
                   />
                 ))}

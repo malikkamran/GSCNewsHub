@@ -54,7 +54,7 @@ export default function CategorySection({ categorySlug }: CategorySectionProps) 
               article={article} 
               category={category}
               size="small"
-              showCategory={false}
+              showCategory={true}
               showSummary={false}
             />
           ))}
