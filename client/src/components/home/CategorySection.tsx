@@ -16,7 +16,7 @@ export default function CategorySection({ categorySlug }: CategorySectionProps) 
   const category = categories?.find(c => c.slug === categorySlug);
   
   const { data: articles, isLoading } = useQuery<Article[]>({
-    queryKey: category ? [`/api/articles/category/${category.id}`, '3'] : null,
+    queryKey: category ? [`/api/articles/category/${category.id}`, '3'] : [],
     enabled: !!category,
   });
   
@@ -48,7 +48,7 @@ export default function CategorySection({ categorySlug }: CategorySectionProps) 
         </div>
       ) : categoryArticles && categoryArticles.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-3">
-          {categoryArticles.map(article => (
+          {categoryArticles.map((article: Article) => (
             <ArticleCard 
               key={article.id} 
               article={article} 

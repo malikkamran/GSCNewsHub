@@ -30,7 +30,7 @@ export default function Footer() {
               {categories?.slice(0, 6).map(category => (
                 <li key={category.id}>
                   <Link href={`/category/${category.slug}`}>
-                    <a className="hover:text-white">{category.name}</a>
+                    <span className="hover:text-white cursor-pointer">{category.name}</span>
                   </Link>
                 </li>
               ))}

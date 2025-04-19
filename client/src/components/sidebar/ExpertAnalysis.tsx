@@ -49,7 +49,7 @@ export default function ExpertAnalysis() {
               </div>
               <h3 className="font-bold mb-2">
                 <Link href={`/analysis/${analysis.slug}`}>
-                  <a className="hover:text-[#BB1919]">{analysis.title}</a>
+                  <span className="hover:text-[#BB1919] cursor-pointer">{analysis.title}</span>
                 </Link>
               </h3>
             </article>

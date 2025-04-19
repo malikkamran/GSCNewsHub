@@ -28,7 +28,7 @@ export default function MostRead() {
               <span className="text-[#BB1919] font-bold text-2xl leading-none">{index + 1}</span>
               <h3 className="font-medium">
                 <Link href={`/article/${article.slug}`}>
-                  <a className="hover:text-[#BB1919]">{article.title}</a>
+                  <span className="hover:text-[#BB1919] cursor-pointer">{article.title}</span>
                 </Link>
               </h3>
             </div>
