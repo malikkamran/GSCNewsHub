@@ -1,12 +1,16 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { insertArticleSchema, insertCategorySchema, insertUserSchema, insertAnalystSchema, insertAnalysisSchema, insertVideoSchema } from "@shared/schema";
 
+// Authentication state
+let isLoggedIn = false;
+let currentUser: any = null;
+
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (req.session && req.session.user) {
+  if (isLoggedIn) {
     return next();
   }
   return res.status(401).json({ authenticated: false, message: "Unauthorized" });
