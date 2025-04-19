@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Category } from "@/lib/types";
 import { useIsMobile } from "@/hooks/use-mobile";
+import NavDropdown from "./NavDropdown";
 
 export default function Header() {
   const [location] = useLocation();
@@ -74,23 +75,78 @@ export default function Header() {
           
           {/* Main Navigation */}
           <nav className="hidden md:block border-t border-b border-red-800 py-2">
-            <ul className="flex flex-wrap space-x-6 text-white">
-              <li>
+            <ul className="flex flex-wrap space-x-6 text-white" role="menubar">
+              <li role="none">
                 <Link href="/">
-                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/' ? 'text-white font-bold' : 'text-gray-200'}`}>
+                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
                     Home
                   </span>
                 </Link>
               </li>
-              {categories?.map(category => (
-                <li key={category.id}>
-                  <Link href={`/category/${category.slug}`}>
-                    <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === `/category/${category.slug}` ? 'text-white font-bold' : 'text-gray-200'}`}>
-                      {category.name}
-                    </span>
-                  </Link>
-                </li>
-              ))}
+              <li role="none">
+                <Link href="/category/logistics">
+                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/logistics' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                    Logistics
+                  </span>
+                </Link>
+              </li>
+              <li role="none">
+                <Link href="/category/warehousing">
+                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/warehousing' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                    Warehousing
+                  </span>
+                </Link>
+              </li>
+              <li role="none">
+                <Link href="/category/procurement">
+                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/procurement' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                    Procurement
+                  </span>
+                </Link>
+              </li>
+              <li role="none">
+                <Link href="/category/manufacturing">
+                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/manufacturing' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                    Manufacturing
+                  </span>
+                </Link>
+              </li>
+              <li role="none">
+                <Link href="/category/tech-digital">
+                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/tech-digital' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                    Tech & Digital
+                  </span>
+                </Link>
+              </li>
+              <li role="none">
+                <Link href="/category/sustainability">
+                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/sustainability' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                    Sustainability
+                  </span>
+                </Link>
+              </li>
+              <li role="none">
+                <Link href="/category/market-insights">
+                  <span className={`font-medium hover:text-gray-200 cursor-pointer ${location === '/category/market-insights' ? 'text-white font-bold' : 'text-gray-200'}`} role="menuitem">
+                    Market Insights
+                  </span>
+                </Link>
+              </li>
+              <li role="none">
+                <NavDropdown 
+                  label="More" 
+                  items={[
+                    { label: "Trade Policy", slug: "trade-policy" },
+                    { label: "Risk & Security", slug: "risk-security" },
+                    { label: "E-commerce", slug: "e-commerce" },
+                    { label: "Infrastructure", slug: "infrastructure" },
+                    { label: "Cold Chain", slug: "cold-chain" },
+                    { label: "Events & Conferences", slug: "events-conferences" },
+                    { label: "Company Profiles", slug: "company-profiles" },
+                    { label: "Innovation", slug: "innovation" }
+                  ]}
+                />
+              </li>
             </ul>
           </nav>
         </div>
@@ -116,22 +172,94 @@ export default function Header() {
       
       {/* Mobile Navigation */}
       {showMobileMenu && (
-        <nav className="md:hidden bg-gray-800">
+        <nav className="md:hidden bg-gray-800" aria-label="Mobile menu">
           <ul className="text-white px-4 py-2">
             <li>
               <Link href="/">
                 <span className="block py-2 border-b border-gray-700 cursor-pointer">Home</span>
               </Link>
             </li>
-            {categories?.map((category, index) => (
-              <li key={category.id}>
-                <Link href={`/category/${category.slug}`}>
-                  <span className={`block py-2 cursor-pointer ${index < categories.length - 1 ? 'border-b border-gray-700' : ''}`}>
-                    {category.name}
-                  </span>
-                </Link>
-              </li>
-            ))}
+            {/* New primary navigation items */}
+            <li>
+              <Link href="/category/logistics">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Logistics</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/warehousing">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Warehousing</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/procurement">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Procurement</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/manufacturing">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Manufacturing</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/tech-digital">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Tech & Digital</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/sustainability">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Sustainability</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/market-insights">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Market Insights</span>
+              </Link>
+            </li>
+            
+            {/* More dropdown items */}
+            <li>
+              <div className="block py-2 border-b border-gray-700 text-gray-400 text-sm font-semibold">MORE CATEGORIES</div>
+            </li>
+            <li>
+              <Link href="/category/trade-policy">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Trade Policy</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/risk-security">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Risk & Security</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/e-commerce">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">E-commerce</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/infrastructure">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Infrastructure</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/cold-chain">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Cold Chain</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/events-conferences">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Events & Conferences</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/company-profiles">
+                <span className="block py-2 border-b border-gray-700 cursor-pointer">Company Profiles</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/category/innovation">
+                <span className="block py-2 cursor-pointer">Innovation</span>
+              </Link>
+            </li>
           </ul>
         </nav>
       )}
