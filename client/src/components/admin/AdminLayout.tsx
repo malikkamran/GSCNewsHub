@@ -189,53 +189,47 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             Content Management
           </h3>
           <nav className="space-y-2 mb-6">
-            <Link to="/admin/dashboard">
-              {({ isActive }) => (
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  size="sm"
-                  className={`w-full justify-start ${
-                    isActive ? "bg-gray-100 text-[#BB1919] font-medium" : ""
-                  }`}
-                  onClick={() => handleNavigate("/admin/dashboard")}
-                >
-                  <LayoutDashboard className="h-4 w-4 mr-2" />
-                  Dashboard
-                </Button>
-              )}
+            <Link href="/admin/dashboard">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`w-full justify-start ${
+                  location === "/admin/dashboard" ? "bg-gray-100 text-[#BB1919] font-medium" : ""
+                }`}
+                onClick={() => handleNavigate("/admin/dashboard")}
+              >
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                Dashboard
+              </Button>
             </Link>
             
-            <Link to="/admin/articles">
-              {({ isActive }) => (
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  size="sm"
-                  className={`w-full justify-start ${
-                    isActive || location.includes("/admin/articles/") 
-                      ? "bg-gray-100 text-[#BB1919] font-medium" : ""
-                  }`}
-                  onClick={() => handleNavigate("/admin/articles")}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Manage Articles
-                </Button>
-              )}
+            <Link href="/admin/articles">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`w-full justify-start ${
+                  location === "/admin/articles" || location.includes("/admin/articles/") 
+                    ? "bg-gray-100 text-[#BB1919] font-medium" : ""
+                }`}
+                onClick={() => handleNavigate("/admin/articles")}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Manage Articles
+              </Button>
             </Link>
             
-            <Link to="/admin/categories">
-              {({ isActive }) => (
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  size="sm"
-                  className={`w-full justify-start ${
-                    isActive ? "bg-gray-100 text-[#BB1919] font-medium" : ""
-                  }`}
-                  onClick={() => handleNavigate("/admin/categories")}
-                >
-                  <FolderOpen className="h-4 w-4 mr-2" />
-                  Manage Categories
-                </Button>
-              )}
+            <Link href="/admin/categories">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`w-full justify-start ${
+                  location === "/admin/categories" ? "bg-gray-100 text-[#BB1919] font-medium" : ""
+                }`}
+                onClick={() => handleNavigate("/admin/categories")}
+              >
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Manage Categories
+              </Button>
             </Link>
           </nav>
           
@@ -243,20 +237,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             User Management
           </h3>
           <nav className="space-y-2 mb-6">
-            <Link to="/admin/users">
-              {({ isActive }) => (
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  size="sm"
-                  className={`w-full justify-start ${
-                    isActive ? "bg-gray-100 text-[#BB1919] font-medium" : ""
-                  }`}
-                  onClick={() => handleNavigate("/admin/users")}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Users
-                </Button>
-              )}
+            <Link href="/admin/users">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`w-full justify-start ${
+                  location === "/admin/users" ? "bg-gray-100 text-[#BB1919] font-medium" : ""
+                }`}
+                onClick={() => handleNavigate("/admin/users")}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Manage Users
+              </Button>
             </Link>
           </nav>
           
@@ -264,20 +256,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             Advertising
           </h3>
           <nav className="space-y-2">
-            <Link to="/admin/ads">
-              {({ isActive }) => (
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  size="sm"
-                  className={`w-full justify-start ${
-                    isActive ? "bg-gray-100 text-[#BB1919] font-medium" : ""
-                  }`}
-                  onClick={() => handleNavigate("/admin/ads")}
-                >
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  Manage Advertisements
-                </Button>
-              )}
+            <Link href="/admin/ads">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`w-full justify-start ${
+                  location === "/admin/ads" ? "bg-gray-100 text-[#BB1919] font-medium" : ""
+                }`}
+                onClick={() => handleNavigate("/admin/ads")}
+              >
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Manage Advertisements
+              </Button>
             </Link>
           </nav>
         </aside>
