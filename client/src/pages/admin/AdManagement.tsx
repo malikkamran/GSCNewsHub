@@ -116,7 +116,7 @@ export default function AdManagement() {
     defaultValues: {
       title: "",
       description: "",
-      placementId: 0,
+      placementId: 1, // Default to first placement instead of 0
       imageUrl: "",
       linkUrl: "",
       altText: "",
@@ -443,7 +443,7 @@ export default function AdManagement() {
                         <SelectValue placeholder="All Pages" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Pages</SelectItem>
+                        <SelectItem value="all_pages">All Pages</SelectItem>
                         {availablePages.map((page: string) => (
                           <SelectItem key={page} value={page}>{page}</SelectItem>
                         ))}
@@ -458,7 +458,7 @@ export default function AdManagement() {
                           <SelectValue placeholder="All Sections" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Sections</SelectItem>
+                          <SelectItem value="all_sections">All Sections</SelectItem>
                           {availableSections.map((section: string) => (
                             <SelectItem key={section} value={section}>{section}</SelectItem>
                           ))}
@@ -955,11 +955,15 @@ export default function AdManagement() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {adPlacements?.map((placement: AdPlacement) => (
-                          <SelectItem key={placement.id} value={placement.id.toString()}>
-                            {placement.name} ({placement.page}/{placement.section})
-                          </SelectItem>
-                        ))}
+                        {adPlacements && adPlacements.length > 0 ? (
+                          adPlacements.map((placement: AdPlacement) => (
+                            <SelectItem key={placement.id} value={placement.id.toString()}>
+                              {placement.name} ({placement.page}/{placement.section})
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="1">No placements found</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
