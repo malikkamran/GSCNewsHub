@@ -11,7 +11,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { ChevronRight, Search, FileText, Tag, Calendar, Eye, Info, Lightbulb } from "lucide-react";
+import { ChevronRight, Search, FileText, Tag, Calendar, Eye, Info, Lightbulb, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -249,6 +249,22 @@ export default function SearchPage() {
                           {searchResults.queryContext && (
                             <p className="mt-1 text-blue-600">{searchResults.queryContext}</p>
                           )}
+                          {searchResults.relatedTerms && searchResults.relatedTerms.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-sm text-blue-700">Related terms:</p>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {searchResults.relatedTerms.map((term, index) => (
+                                  <span 
+                                    key={index}
+                                    className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-full border border-blue-100 cursor-pointer hover:bg-blue-100"
+                                    onClick={() => setLocation(`/search?q=${encodeURIComponent(term)}`)}
+                                  >
+                                    {term}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -397,12 +413,55 @@ export default function SearchPage() {
                 ))
               ) : query ? (
                 // No results
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-4">🔍</div>
-                  <h2 className="text-2xl font-semibold mb-2">No results found</h2>
-                  <p className="text-gray-600 mb-6">
-                    We couldn't find any articles matching "{query}". Please try another search term.
-                  </p>
+                <div className="py-8">
+                  <div className="text-center mb-6">
+                    <div className="text-4xl mb-4">🔍</div>
+                    <h2 className="text-2xl font-semibold mb-2">No results found</h2>
+                    <p className="text-gray-600 mb-2">
+                      We couldn't find any articles matching "{query}". Please try another search term.
+                    </p>
+                    
+                    {searchResults?.enhancedQuery && searchResults?.enhancedQuery !== query && (
+                      <p className="text-sm text-gray-500 italic">
+                        We searched for both "{query}" and "{searchResults.enhancedQuery}" but found no matching content.
+                      </p>
+                    )}
+                  </div>
+                  
+                  {searchResults?.relatedTerms && searchResults.relatedTerms.length > 0 && (
+                    <div className="max-w-md mx-auto mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <h3 className="font-medium text-gray-700 mb-2 flex items-center">
+                        <Sparkles className="h-4 w-4 mr-1 text-[#BB1919]" />
+                        Suggested searches
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {searchResults.relatedTerms.map((term, index) => (
+                          <Badge 
+                            key={index}
+                            variant="outline"
+                            className="cursor-pointer hover:bg-gray-100"
+                            onClick={() => setLocation(`/search?q=${encodeURIComponent(term)}`)}
+                          >
+                            {term}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="max-w-md mx-auto mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <h3 className="font-medium text-blue-700 mb-2 flex items-center">
+                      <Lightbulb className="h-4 w-4 mr-1" />
+                      About our search
+                    </h3>
+                    <p className="text-sm text-blue-600 mb-2">
+                      Our AI-powered search understands natural language queries and tries to match articles based on relevance, recency, and semantic meaning.
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      Try searching for industry-specific topics like "supply chain logistics" or "procurement best practices".
+                    </p>
+                  </div>
+                  
                   <div className="flex justify-center">
                     <Button 
                       variant="outline" 
