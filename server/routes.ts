@@ -625,18 +625,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Search endpoint
+  // Search endpoint with AI enhancement
   app.get("/api/search", async (req: Request, res: Response) => {
     try {
       const query = req.query.q as string;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+      const useAI = req.query.ai !== 'false'; // Default to true
       
       if (!query) {
         return res.json({ articles: [], total: 0 });
       }
       
-      const results = await storage.searchArticles(query, limit, offset);
+      console.log(`Search request received: "${query}" (useAI: ${useAI})`);
+      const startTime = Date.now();
+      
+      const results = await storage.searchArticles(query, limit, offset, useAI);
       
       // Enhance article results with category information
       const enhancedResults = {
@@ -649,7 +653,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               category
             };
           })
-        )
+        ),
+        processingTime: Date.now() - startTime
       };
       
       res.json(enhancedResults);

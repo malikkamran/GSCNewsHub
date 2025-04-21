@@ -34,6 +34,9 @@ interface ArticleWithCategory extends BaseArticle {
 interface SearchResult {
   articles: ArticleWithCategory[];
   total: number;
+  enhancedQuery?: string;
+  queryContext?: string;
+  processingTime?: number;
 }
 
 // Utility function to highlight matched terms in text
@@ -173,13 +176,40 @@ export default function SearchPage() {
               </h1>
               
               {query && (
-                <p className="text-lg text-gray-600">
-                  {searchResults?.total 
-                    ? `Showing ${searchResults.total} result${searchResults.total !== 1 ? 's' : ''} for "${query}"`
-                    : isLoading 
-                      ? "Searching..." 
-                      : `No results found for "${query}"`}
-                </p>
+                <div>
+                  <p className="text-lg text-gray-600">
+                    {searchResults?.total 
+                      ? `Showing ${searchResults.total} result${searchResults.total !== 1 ? 's' : ''} for "${query}"`
+                      : isLoading 
+                        ? "Searching..." 
+                        : `No results found for "${query}"`}
+                    {searchResults?.processingTime && (
+                      <span className="text-sm text-gray-400 ml-2">
+                        ({(searchResults.processingTime / 1000).toFixed(2)}s)
+                      </span>
+                    )}
+                  </p>
+                  
+                  {/* AI-enhanced search information */}
+                  {searchResults?.enhancedQuery && (
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-md text-sm">
+                      <div className="flex items-start">
+                        <Lightbulb className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-medium text-blue-800">
+                            Enhanced search: We interpreted your query as 
+                            <span className="px-1.5 py-0.5 mx-1 bg-blue-100 text-blue-700 rounded font-semibold">
+                              "{searchResults.enhancedQuery}"
+                            </span>
+                          </p>
+                          {searchResults.queryContext && (
+                            <p className="mt-1 text-blue-600">{searchResults.queryContext}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 

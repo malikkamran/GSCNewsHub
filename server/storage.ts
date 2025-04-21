@@ -742,21 +742,45 @@ export class MemStorage implements IStorage {
     return video;
   }
   
-  async searchArticles(query: string, limit: number = 10, offset: number = 0): Promise<{ articles: Article[], total: number }> {
+  async searchArticles(query: string, limit: number = 10, offset: number = 0, useAI: boolean = true): Promise<{ articles: Article[], total: number, enhancedQuery?: string, queryContext?: string }> {
     if (!query) {
       return { articles: [], total: 0 };
     }
     
+    let enhancedSearchInfo;
+    let queryTerms: string[] = [];
+    let normalizedQuery: string = query.toLowerCase().trim();
+    let relatedTerms: string[] = [];
+    let queryContext: string | undefined;
+    
+    // Enhanced search with AI if enabled
+    if (useAI) {
+      try {
+        // Dynamically import to avoid circular dependencies
+        const { enhanceSearchQuery } = await import('./perplexity');
+        enhancedSearchInfo = await enhanceSearchQuery(query);
+        
+        normalizedQuery = enhancedSearchInfo.enhancedQuery.toLowerCase().trim();
+        relatedTerms = enhancedSearchInfo.relatedTerms;
+        queryContext = enhancedSearchInfo.queryContext;
+        
+        console.log(`AI enhanced search: "${query}" -> "${normalizedQuery}"`);
+        if (relatedTerms.length > 0) {
+          console.log(`Related terms: ${relatedTerms.join(', ')}`);
+        }
+      } catch (error) {
+        console.error('Error using AI-enhanced search:', error);
+        // Fall back to standard search
+      }
+    }
+    
+    // Split query into individual terms for better matching
+    queryTerms = normalizedQuery.split(/\s+/).filter(term => term.length > 1);
+    
     // Get all published articles
     const allArticles = Array.from(this.articles.values()).filter(article => article.status === 'published');
     
-    // Normalize query term
-    const normalizedQuery = query.toLowerCase().trim();
-    
-    // Split query into individual terms for better matching - include shorter terms now for more comprehensive search
-    const queryTerms = normalizedQuery.split(/\s+/).filter(term => term.length > 1);
-    
-    // Also get categories for semantic search
+    // Get categories for semantic search
     const categories = Array.from(this.categories.values());
     
     // Score and filter articles based on relevance
@@ -778,6 +802,15 @@ export class MemStorage implements IStorage {
         }
       });
       
+      // Add related terms with slightly lower weight
+      relatedTerms.forEach(term => {
+        const termLower = term.toLowerCase();
+        if (titleLower.includes(termLower)) {
+          score += 6; // Lower than direct match but still significant
+          matchDetails.push(`title:related:${term}`);
+        }
+      });
+      
       // Check for publisher match (good relevance signal)
       if (article.publishedBy) {
         const publisherLower = article.publishedBy.toLowerCase();
@@ -790,6 +823,14 @@ export class MemStorage implements IStorage {
           if (publisherLower.includes(term)) {
             score += 4;
             matchDetails.push(`publisher:term:${term}`);
+          }
+        });
+        
+        relatedTerms.forEach(term => {
+          const termLower = term.toLowerCase();
+          if (publisherLower.includes(termLower)) {
+            score += 3;
+            matchDetails.push(`publisher:related:${term}`);
           }
         });
       }
@@ -808,6 +849,14 @@ export class MemStorage implements IStorage {
         }
       });
       
+      relatedTerms.forEach(term => {
+        const termLower = term.toLowerCase();
+        if (summaryLower.includes(termLower)) {
+          score += 4;
+          matchDetails.push(`summary:related:${term}`);
+        }
+      });
+      
       // Check for matches in content (lower weight but still important)
       const contentLower = article.content.toLowerCase();
       if (contentLower.includes(normalizedQuery)) {
@@ -823,6 +872,16 @@ export class MemStorage implements IStorage {
           const bonus = Math.min(occurrences, 10);
           score += 2 + bonus;
           matchDetails.push(`content:term:${term}:${occurrences}`);
+        }
+      });
+      
+      relatedTerms.forEach(term => {
+        const termLower = term.toLowerCase();
+        if (contentLower.includes(termLower)) {
+          const occurrences = (contentLower.match(new RegExp(termLower, 'g')) || []).length;
+          const bonus = Math.min(occurrences, 5); // Lower cap for related terms
+          score += 1 + bonus;
+          matchDetails.push(`content:related:${term}:${occurrences}`);
         }
       });
       
@@ -855,6 +914,14 @@ export class MemStorage implements IStorage {
             matchDetails.push(`category:term:${term}`);
           }
         });
+        
+        relatedTerms.forEach(term => {
+          const termLower = term.toLowerCase();
+          if (categoryNameLower.includes(termLower)) {
+            score += 5;
+            matchDetails.push(`category:related:${term}`);
+          }
+        });
       }
       
       // Word position boost - terms appearing earlier in content are more relevant
@@ -878,15 +945,37 @@ export class MemStorage implements IStorage {
         }
       });
       
-      // Recency boost - newer articles get a slight boost
+      // Recency boost - newer articles get a significant boost
       const articleDate = new Date(article.publishedAt).getTime();
       const now = new Date().getTime();
       const daysDiff = Math.floor((now - articleDate) / (1000 * 60 * 60 * 24));
+      
+      // More substantial recency boost for the past 30 days
       if (daysDiff < 30) {
-        const recencyBoost = Math.max(0, 3 - Math.floor(daysDiff / 10));
-        score += recencyBoost;
-        if (recencyBoost > 0) {
-          matchDetails.push(`recency:${recencyBoost}`);
+        // Articles from last 7 days get highest boost
+        if (daysDiff < 7) {
+          score += 10;
+          matchDetails.push(`recency:very-recent`);
+        } 
+        // Articles from last 14 days get medium boost
+        else if (daysDiff < 14) {
+          score += 6;
+          matchDetails.push(`recency:recent`);
+        }
+        // Articles from last 30 days get slight boost
+        else {
+          score += 3;
+          matchDetails.push(`recency:somewhat-recent`);
+        }
+      }
+      
+      // Engagement metrics boost (views)
+      if (article.views && article.views > 0) {
+        // Cap the views boost to prevent very popular articles from dominating all results
+        const viewsBoost = Math.min(5, Math.floor(article.views / 10));
+        if (viewsBoost > 0) {
+          score += viewsBoost;
+          matchDetails.push(`engagement:views:${viewsBoost}`);
         }
       }
       
@@ -896,7 +985,16 @@ export class MemStorage implements IStorage {
     // Filter out non-matching articles and sort by score
     const relevantArticles = scoredArticles
       .filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score);
+      .sort((a, b) => {
+        // Primary sort by score
+        const scoreDiff = b.score - a.score;
+        if (scoreDiff !== 0) return scoreDiff;
+        
+        // Secondary sort by recency (newer first)
+        const aDate = new Date(a.article.publishedAt).getTime();
+        const bDate = new Date(b.article.publishedAt).getTime();
+        return bDate - aDate;
+      });
     
     console.log(`Search for "${query}" found ${relevantArticles.length} articles`);
     if (relevantArticles.length > 0) {
@@ -914,7 +1012,9 @@ export class MemStorage implements IStorage {
     
     return {
       articles: paginatedArticles,
-      total: relevantArticles.length
+      total: relevantArticles.length,
+      enhancedQuery: normalizedQuery !== query.toLowerCase().trim() ? normalizedQuery : undefined,
+      queryContext
     };
   }
 }
