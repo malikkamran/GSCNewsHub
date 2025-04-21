@@ -257,7 +257,7 @@ export default function SearchPage() {
                                   <span 
                                     key={index}
                                     className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded-full border border-blue-100 cursor-pointer hover:bg-blue-100"
-                                    onClick={() => setLocation(`/search?q=${encodeURIComponent(term)}`)}
+                                    onClick={() => window.location.href = `/search?q=${encodeURIComponent(term)}`}
                                   >
                                     {term}
                                   </span>
@@ -282,7 +282,8 @@ export default function SearchPage() {
                   const formData = new FormData(e.currentTarget);
                   const searchQuery = formData.get("search") as string;
                   if (searchQuery.trim()) {
-                    setLocation(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                    // Force a full page navigation to refresh the search results
+                    window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
                   }
                 }}
               >
@@ -353,7 +354,7 @@ export default function SearchPage() {
                               <Badge 
                                 variant="outline" 
                                 className="bg-[#BB1919] text-white hover:bg-[#A00000] cursor-pointer"
-                                onClick={() => article.category?.slug && setLocation(`/category/${article.category.slug}`)}
+                                onClick={() => article.category?.slug && (window.location.href = `/category/${article.category.slug}`)}
                               >
                                 {article.category?.name || "Category"}
                               </Badge>
@@ -401,7 +402,7 @@ export default function SearchPage() {
                           <Button 
                             variant="link" 
                             className="text-[#BB1919] p-0 hover:underline flex items-center"
-                            onClick={() => setLocation(`/article/${article.slug}`)}
+                            onClick={() => window.location.href = `/article/${article.slug}`}
                           >
                             Read article
                             <FileText className="ml-1 h-4 w-4" />
@@ -431,7 +432,7 @@ export default function SearchPage() {
                   {searchResults?.relatedTerms && searchResults.relatedTerms.length > 0 && (
                     <div className="max-w-md mx-auto mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <h3 className="font-medium text-gray-700 mb-2 flex items-center">
-                        <Sparkles className="h-4 w-4 mr-1 text-[#BB1919]" />
+                        <Search className="h-4 w-4 mr-1 text-[#BB1919]" />
                         Suggested searches
                       </h3>
                       <div className="flex flex-wrap gap-2">
@@ -440,7 +441,7 @@ export default function SearchPage() {
                             key={index}
                             variant="outline"
                             className="cursor-pointer hover:bg-gray-100"
-                            onClick={() => setLocation(`/search?q=${encodeURIComponent(term)}`)}
+                            onClick={() => window.location.href = `/search?q=${encodeURIComponent(term)}`}
                           >
                             {term}
                           </Badge>
@@ -466,7 +467,7 @@ export default function SearchPage() {
                     <Button 
                       variant="outline" 
                       className="border-[#BB1919] text-[#BB1919] hover:bg-[#BB1919] hover:text-white"
-                      onClick={() => setLocation("/")}
+                      onClick={() => window.location.href = "/"}
                     >
                       Return to homepage
                     </Button>
