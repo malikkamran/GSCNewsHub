@@ -32,7 +32,7 @@ export default function Home() {
             {/* In-content Ad */}
             <div className="my-8">
               <div className="text-xs text-gray-500 mb-1">ADVERTISEMENT</div>
-              <AdBanner slot="in-article" format="horizontal" className="border border-gray-200" />
+              <AdBanner slot="home-content" className="border border-gray-200" />
             </div>
             
             {/* Category Sections */}
@@ -45,7 +45,7 @@ export default function Home() {
             {/* Sidebar Ad */}
             <div className="mb-6">
               <div className="text-xs text-gray-500 mb-1">ADVERTISEMENT</div>
-              <AdBanner slot="sidebar-top" format="rectangle" className="border border-gray-200" />
+              <AdBanner slot="home-sidebar-top" className="border border-gray-200" />
             </div>
             
             <MostRead />
@@ -54,7 +54,7 @@ export default function Home() {
             {/* Second Sidebar Ad */}
             <div className="mb-6">
               <div className="text-xs text-gray-500 mb-1">ADVERTISEMENT</div>
-              <AdBanner slot="sidebar-middle" format="rectangle" className="border border-gray-200" />
+              <AdBanner slot="home-sidebar-middle" className="border border-gray-200" />
             </div>
           </div>
         </div>
@@ -62,7 +62,7 @@ export default function Home() {
       
       {/* Bottom Ad Banner */}
       <div className="container mx-auto">
-        <AdBanner slot="bottom-leaderboard" format="horizontal" className="my-4" />
+        <AdBanner slot="home-bottom" className="my-4" />
       </div>
     </>
   );
