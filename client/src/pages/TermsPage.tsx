@@ -107,8 +107,7 @@ export default function TermsPage() {
               If you have any questions about these Terms, please contact us at:
             </p>
             <p>
-              <strong>Email:</strong> legal@gscsupplychainnews.com<br />
-              <strong>Address:</strong> 1234 Supply Chain Drive, Logistics Center, NY 10001, USA
+              <strong>Email:</strong> legal@gscnews.co
             </p>
           </div>
         </div>

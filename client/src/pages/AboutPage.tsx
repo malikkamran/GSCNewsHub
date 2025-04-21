@@ -141,9 +141,9 @@ export default function AboutPage() {
             </p>
             <p>
               <strong>General Inquiries:</strong> info@gscnews.co<br />
-              <strong>Editorial Team:</strong> editorial@gscsupplychainnews.com<br />
-              <strong>Press Releases:</strong> press@gscsupplychainnews.com<br />
-              <strong>Advertising:</strong> advertising@gscsupplychainnews.com
+              <strong>Editorial Team:</strong> editorial@gscnews.co<br />
+              <strong>Press Releases:</strong> press@gscnews.co<br />
+              <strong>Advertising:</strong> advertising@gscnews.co
             </p>
 
           </div>

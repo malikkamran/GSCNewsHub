@@ -130,8 +130,7 @@ export default function PrivacyPage() {
               If you have any questions or concerns about this Privacy Policy, please contact us at:
             </p>
             <p>
-              <strong>Email:</strong> privacy@gscsupplychainnews.com<br />
-              <strong>Address:</strong> 1234 Supply Chain Drive, Logistics Center, NY 10001, USA
+              <strong>Email:</strong> privacy@gscnews.co
             </p>
           </div>
         </div>
