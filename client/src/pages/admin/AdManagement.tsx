@@ -435,8 +435,8 @@ export default function AdManagement() {
                 {/* Filters for placements */}
                 <div className="flex flex-wrap gap-4 mt-4">
                   <div className="w-full sm:w-auto">
-                    <Select value={selectedPage || ""} onValueChange={(value) => {
-                      setSelectedPage(value || null);
+                    <Select value={selectedPage || "all_pages"} onValueChange={(value) => {
+                      setSelectedPage(value === "all_pages" ? null : value);
                       setSelectedSection(null); // Reset section when page changes
                     }}>
                       <SelectTrigger className="w-full sm:w-40">
@@ -453,7 +453,7 @@ export default function AdManagement() {
                   
                   {selectedPage && (
                     <div className="w-full sm:w-auto">
-                      <Select value={selectedSection || ""} onValueChange={(value) => setSelectedSection(value || null)}>
+                      <Select value={selectedSection || "all_sections"} onValueChange={(value) => setSelectedSection(value === "all_sections" ? null : value)}>
                         <SelectTrigger className="w-full sm:w-40">
                           <SelectValue placeholder="All Sections" />
                         </SelectTrigger>
