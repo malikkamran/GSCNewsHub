@@ -132,7 +132,7 @@ export default function ArticlePage() {
       
       {/* Bottom Ad Banner */}
       <div className="container mx-auto">
-        <AdBanner slot="bottom-leaderboard" format="horizontal" className="my-4" />
+        <AdBanner slot="bottom-leaderboard" className="my-4" />
       </div>
     </>
   );
