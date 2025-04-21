@@ -437,6 +437,149 @@ export class MemStorage implements IStorage {
         featured: true,
         publishedAt: new Date()
       });
+      
+      // Create ad placements for different pages and sections
+      const adPlacementData: InsertAdPlacement[] = [
+        // Home page ads
+        {
+          name: "Home Page Sidebar Top",
+          slot: "home-sidebar-top",
+          page: "home",
+          section: "sidebar",
+          description: "Ad slot at the top of the sidebar on the home page",
+          width: 300,
+          height: 250
+        },
+        {
+          name: "Home Page Sidebar Bottom",
+          slot: "home-sidebar-bottom",
+          page: "home",
+          section: "sidebar",
+          description: "Ad slot at the bottom of the sidebar on the home page",
+          width: 300,
+          height: 250
+        },
+        
+        // Category page ads
+        {
+          name: "Category Page Header",
+          slot: "category-header",
+          page: "category",
+          section: "header",
+          description: "Ad banner at the top of category pages",
+          width: 728,
+          height: 90
+        },
+        {
+          name: "Category Page Sidebar",
+          slot: "category-sidebar",
+          page: "category",
+          section: "sidebar",
+          description: "Ad slot in the sidebar of category pages",
+          width: 300,
+          height: 250
+        },
+        
+        // Article page ads
+        {
+          name: "Article Page Header",
+          slot: "article-header",
+          page: "article",
+          section: "header",
+          description: "Ad banner at the top of article pages",
+          width: 728,
+          height: 90
+        },
+        {
+          name: "Article Page Sidebar",
+          slot: "article-sidebar",
+          page: "article",
+          section: "sidebar",
+          description: "Ad slot in the sidebar of article pages",
+          width: 300,
+          height: 600
+        },
+        {
+          name: "Article Page In-Content",
+          slot: "article-content",
+          page: "article",
+          section: "content",
+          description: "Ad slot within the article content",
+          width: 300,
+          height: 250
+        },
+        {
+          name: "Article Page Bottom",
+          slot: "article-bottom",
+          page: "article",
+          section: "bottom",
+          description: "Ad banner at the bottom of article pages",
+          width: 728,
+          height: 90
+        }
+      ];
+      
+      // Create ad placements
+      for (const placement of adPlacementData) {
+        this.createAdPlacement(placement);
+      }
+      
+      // Create some sample advertisements
+      const advertisementData: InsertAdvertisement[] = [
+        {
+          title: "Global Logistics Solutions",
+          description: "Your partner for end-to-end global logistics services",
+          imageUrl: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2000&q=80",
+          linkUrl: "https://example.com/logistics-partner",
+          placementId: 1, // Home sidebar top
+          startDate: new Date(),
+          endDate: new Date(new Date().setMonth(new Date().getMonth() + 3)), // 3 months from now
+          active: true,
+          priority: 1,
+          createdBy: 1 // Admin user
+        },
+        {
+          title: "Supply Chain Consulting",
+          description: "Expert consulting for supply chain optimization",
+          imageUrl: "https://images.unsplash.com/photo-1542744095-fcf48d80b0fd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2000&q=80",
+          linkUrl: "https://example.com/sc-consulting",
+          placementId: 3, // Category header
+          startDate: new Date(),
+          endDate: new Date(new Date().setMonth(new Date().getMonth() + 2)), // 2 months from now
+          active: true,
+          priority: 1,
+          createdBy: 1 // Admin user
+        },
+        {
+          title: "Warehouse Management Software",
+          description: "Revolutionize your warehouse operations with our WMS",
+          imageUrl: "https://images.unsplash.com/photo-1553413077-190dd305871c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2000&q=80",
+          linkUrl: "https://example.com/wms-software",
+          placementId: 5, // Article header
+          startDate: new Date(),
+          endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)), // 1 month from now
+          active: true,
+          priority: 1,
+          createdBy: 1 // Admin user
+        },
+        {
+          title: "Freight Forwarding Services",
+          description: "Fast and reliable global freight forwarding",
+          imageUrl: "https://images.unsplash.com/photo-1494412574745-b4eb8d86c96d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2000&q=80",
+          linkUrl: "https://example.com/freight-services",
+          placementId: 6, // Article sidebar
+          startDate: new Date(),
+          endDate: new Date(new Date().setMonth(new Date().getMonth() + 2)), // 2 months from now
+          active: true,
+          priority: 1,
+          createdBy: 1 // Admin user
+        }
+      ];
+      
+      // Create advertisements
+      for (const ad of advertisementData) {
+        this.createAdvertisement(ad);
+      }
     }
   }
 

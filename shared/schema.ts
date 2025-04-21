@@ -145,7 +145,8 @@ export const adPlacements = pgTable("ad_placements", {
   name: text("name").notNull(),
   slot: text("slot").notNull().unique(),
   description: text("description"),
-  format: text("format").notNull(), // 'horizontal', 'rectangle', 'leaderboard', etc.
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
   page: text("page").notNull(), // 'home', 'article', 'category', etc.
   section: text("section").notNull(), // 'top', 'sidebar', 'in-content', 'bottom', etc.
   active: boolean("active").default(true).notNull(),
@@ -162,6 +163,7 @@ export type AdPlacement = typeof adPlacements.$inferSelect;
 export const advertisements = pgTable("advertisements", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
+  description: text("description"),
   placementId: integer("placement_id").notNull().references(() => adPlacements.id),
   imageUrl: text("image_url").notNull(),
   linkUrl: text("link_url").notNull(),
@@ -169,19 +171,20 @@ export const advertisements = pgTable("advertisements", {
   startDate: timestamp("start_date").defaultNow().notNull(),
   endDate: timestamp("end_date"),
   active: boolean("active").default(true).notNull(),
+  priority: integer("priority").default(1),
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  clickCount: integer("click_count").default(0),
-  viewCount: integer("view_count").default(0),
+  clicks: integer("clicks").default(0),
+  views: integer("views").default(0),
   sponsorName: text("sponsor_name"),
   sponsorLogo: text("sponsor_logo"),
 });
 
 export const insertAdvertisementSchema = createInsertSchema(advertisements).omit({
   id: true,
-  clickCount: true,
-  viewCount: true,
+  clicks: true,
+  views: true,
   createdAt: true,
   updatedAt: true,
 });

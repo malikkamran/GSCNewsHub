@@ -28,6 +28,7 @@ import AdminCreateArticle from "@/pages/admin/CreateArticle";
 import AdminEditArticle from "@/pages/admin/EditArticle";
 import AdminCategories from "@/pages/admin/Categories";
 import AdminUsers from "@/pages/admin/Users";
+import AdManagement from "@/pages/admin/AdManagement";
 
 function Router() {
   const [location] = useLocation();
