@@ -37,14 +37,12 @@ export default function CategoryPage() {
         <meta name="description" content={`Latest ${category?.name || "category"} news and updates from GSC Supply Chain News.`} />
       </Helmet>
       
-      {/* Top Ad Banner */}
-      <AdBanner slot="top-leaderboard" format="horizontal" />
       
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbItems} />
       
       {/* Main Content Area */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 mt-2">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
           <div className="lg:w-8/12">
