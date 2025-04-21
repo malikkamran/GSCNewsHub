@@ -772,6 +772,167 @@ export class MemStorage implements IStorage {
     this.videos.set(id, video);
     return video;
   }
+
+  // Ad Placement Methods
+  async getAdPlacements(): Promise<AdPlacement[]> {
+    return Array.from(this.adPlacements.values());
+  }
+  
+  async getAdPlacementsByPage(page: string): Promise<AdPlacement[]> {
+    return Array.from(this.adPlacements.values())
+      .filter(placement => placement.page === page);
+  }
+  
+  async getAdPlacementsBySection(section: string): Promise<AdPlacement[]> {
+    return Array.from(this.adPlacements.values())
+      .filter(placement => placement.section === section);
+  }
+  
+  async getAdPlacementsByPageAndSection(page: string, section: string): Promise<AdPlacement[]> {
+    return Array.from(this.adPlacements.values())
+      .filter(placement => placement.page === page && placement.section === section);
+  }
+  
+  async getAdPlacement(id: number): Promise<AdPlacement | undefined> {
+    return this.adPlacements.get(id);
+  }
+  
+  async getAdPlacementBySlot(slot: string): Promise<AdPlacement | undefined> {
+    return Array.from(this.adPlacements.values())
+      .find(placement => placement.slot === slot);
+  }
+  
+  async createAdPlacement(placement: InsertAdPlacement): Promise<AdPlacement> {
+    const id = this.adPlacementId++;
+    const newPlacement: AdPlacement = { ...placement, id };
+    this.adPlacements.set(id, newPlacement);
+    return newPlacement;
+  }
+  
+  async updateAdPlacement(id: number, placement: Partial<InsertAdPlacement>): Promise<AdPlacement | undefined> {
+    const existingPlacement = this.adPlacements.get(id);
+    if (!existingPlacement) return undefined;
+    
+    const updatedPlacement: AdPlacement = {
+      ...existingPlacement,
+      ...placement
+    };
+    
+    this.adPlacements.set(id, updatedPlacement);
+    return updatedPlacement;
+  }
+  
+  async deleteAdPlacement(id: number): Promise<boolean> {
+    return this.adPlacements.delete(id);
+  }
+  
+  // Advertisement Methods
+  async getAdvertisements(): Promise<Advertisement[]> {
+    return Array.from(this.advertisements.values());
+  }
+  
+  async getActiveAdvertisements(): Promise<Advertisement[]> {
+    const now = new Date();
+    
+    return Array.from(this.advertisements.values())
+      .filter(ad => {
+        // Check if ad is active based on start/end dates
+        const startDate = ad.startDate ? new Date(ad.startDate) : new Date(0); // If no start date, use epoch
+        const endDate = ad.endDate ? new Date(ad.endDate) : new Date(8640000000000000); // If no end date, use max date
+        
+        return ad.active && now >= startDate && now <= endDate;
+      });
+  }
+  
+  async getAdvertisementsByPlacement(placementId: number): Promise<Advertisement[]> {
+    return Array.from(this.advertisements.values())
+      .filter(ad => ad.placementId === placementId);
+  }
+  
+  async getAdvertisement(id: number): Promise<Advertisement | undefined> {
+    return this.advertisements.get(id);
+  }
+  
+  async getActiveAdvertisementForPlacement(placementId: number): Promise<Advertisement | undefined> {
+    const now = new Date();
+    
+    // Get all ads for this placement
+    const ads = Array.from(this.advertisements.values())
+      .filter(ad => {
+        // Check if ad is for this placement and is active based on dates
+        const startDate = ad.startDate ? new Date(ad.startDate) : new Date(0);
+        const endDate = ad.endDate ? new Date(ad.endDate) : new Date(8640000000000000);
+        
+        return ad.placementId === placementId && 
+               ad.active && 
+               now >= startDate && 
+               now <= endDate;
+      });
+    
+    // If no ads found, return undefined
+    if (ads.length === 0) return undefined;
+    
+    // If multiple ads found, implement a rotation/selection strategy
+    // For simplicity, we'll just return the ad with the highest priority (lowest priority value)
+    return ads.sort((a, b) => (a.priority || 0) - (b.priority || 0))[0];
+  }
+  
+  async createAdvertisement(ad: InsertAdvertisement): Promise<Advertisement> {
+    const id = this.advertisementId++;
+    const newAd: Advertisement = {
+      ...ad,
+      id,
+      clicks: 0,
+      views: 0,
+      createdAt: new Date()
+    };
+    
+    this.advertisements.set(id, newAd);
+    return newAd;
+  }
+  
+  async updateAdvertisement(id: number, adData: Partial<InsertAdvertisement>): Promise<Advertisement | undefined> {
+    const existingAd = this.advertisements.get(id);
+    if (!existingAd) return undefined;
+    
+    const updatedAd: Advertisement = {
+      ...existingAd,
+      ...adData
+    };
+    
+    this.advertisements.set(id, updatedAd);
+    return updatedAd;
+  }
+  
+  async deleteAdvertisement(id: number): Promise<boolean> {
+    return this.advertisements.delete(id);
+  }
+  
+  async incrementAdClick(id: number): Promise<Advertisement | undefined> {
+    const ad = this.advertisements.get(id);
+    if (!ad) return undefined;
+    
+    const updatedAd: Advertisement = {
+      ...ad,
+      clicks: (ad.clicks || 0) + 1
+    };
+    
+    this.advertisements.set(id, updatedAd);
+    return updatedAd;
+  }
+  
+  async incrementAdView(id: number): Promise<Advertisement | undefined> {
+    const ad = this.advertisements.get(id);
+    if (!ad) return undefined;
+    
+    const updatedAd: Advertisement = {
+      ...ad,
+      views: (ad.views || 0) + 1
+    };
+    
+    this.advertisements.set(id, updatedAd);
+    return updatedAd;
+  }
   
   async searchArticles(query: string, limit: number = 10, offset: number = 0, useAI: boolean = true): Promise<{ articles: Article[], total: number, enhancedQuery?: string, queryContext?: string }> {
     if (!query) {
