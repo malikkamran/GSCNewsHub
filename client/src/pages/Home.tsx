@@ -24,7 +24,7 @@ export default function Home() {
       <Breadcrumb items={breadcrumbItems} />
       
       {/* Main Content Area */}
-      <main className="container mx-auto px-4 py-4">
+      <main className="container mx-auto px-4 py-4 mt-2">
         {/* Red TOP NEWS bar */}
         <div className="bg-[#BB1919] mb-4">
           <h2 className="text-white text-xl font-bold py-2 px-3 font-roboto">TOP NEWS</h2>
