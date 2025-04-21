@@ -91,19 +91,19 @@ export default function CategoryPage() {
             )}
             
             {/* In-content Ad */}
-            <AdBanner slot="in-article" format="horizontal" className="my-8" />
+            <AdBanner slot="category-content" className="my-8" />
           </div>
           
           {/* Sidebar */}
           <div className="lg:w-4/12">
             {/* Sidebar Ad */}
-            <AdBanner slot="sidebar-top" format="rectangle" className="mb-6" />
+            <AdBanner slot="sidebar-top" className="mb-6" />
             
             <MostRead />
             <FeaturedVideo />
             
             {/* Second Sidebar Ad */}
-            <AdBanner slot="sidebar-middle" format="rectangle" className="mb-6" />
+            <AdBanner slot="sidebar-middle" className="mb-6" />
             
             <ExpertAnalysis />
           </div>
@@ -112,7 +112,7 @@ export default function CategoryPage() {
       
       {/* Bottom Ad Banner */}
       <div className="container mx-auto">
-        <AdBanner slot="bottom-leaderboard" format="horizontal" className="my-4" />
+        <AdBanner slot="bottom-leaderboard" className="my-4" />
       </div>
     </>
   );

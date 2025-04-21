@@ -109,7 +109,7 @@ export default function ArticlePage() {
                 </div>
                 
                 {/* In-article Ad */}
-                <AdBanner slot="in-article" format="horizontal" className="my-8" />
+                <AdBanner slot="article-content" className="my-8" />
               </article>
             )}
           </div>
@@ -117,13 +117,13 @@ export default function ArticlePage() {
           {/* Sidebar */}
           <div className="lg:w-4/12">
             {/* Sidebar Ad */}
-            <AdBanner slot="sidebar-top" format="rectangle" className="mb-6" />
+            <AdBanner slot="sidebar-top" className="mb-6" />
             
             <MostRead />
             <FeaturedVideo />
             
             {/* Second Sidebar Ad */}
-            <AdBanner slot="sidebar-middle" format="rectangle" className="mb-6" />
+            <AdBanner slot="sidebar-middle" className="mb-6" />
             
             <ExpertAnalysis />
           </div>
