@@ -19,8 +19,6 @@ export default function Home() {
         <meta name="description" content="Get the latest news and updates on global supply chain, logistics, transportation, and trade from GSC Supply Chain News." />
       </Helmet>
       
-      {/* Top Ad Banner */}
-      <AdBanner slot="top-leaderboard" format="horizontal" />
       
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbItems} />
