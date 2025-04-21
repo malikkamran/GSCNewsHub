@@ -49,7 +49,7 @@ export default function AdBanner({ slot, format, className = "" }: AdBannerProps
   
   return (
     <div 
-      className={`border border-[#BB1919] bg-white shadow-sm transition-all duration-200 overflow-hidden ${isHovered ? 'shadow-md' : ''} ${adClass} ${className}`}
+      className={`border-b border-l border-r border-[#BB1919] bg-white shadow-sm transition-all duration-200 overflow-hidden ${isHovered ? 'shadow-md' : ''} ${adClass} ${className}`}
       aria-label="Featured Partner"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
