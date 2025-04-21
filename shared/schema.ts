@@ -138,3 +138,53 @@ export const insertUserPreferencesSchema = createInsertSchema(userPreferences).p
 
 export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
 export type UserPreferences = typeof userPreferences.$inferSelect;
+
+// Advertisement Slots/Placements table
+export const adPlacements = pgTable("ad_placements", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slot: text("slot").notNull().unique(),
+  description: text("description"),
+  format: text("format").notNull(), // 'horizontal', 'rectangle', 'leaderboard', etc.
+  page: text("page").notNull(), // 'home', 'article', 'category', etc.
+  section: text("section").notNull(), // 'top', 'sidebar', 'in-content', 'bottom', etc.
+  active: boolean("active").default(true).notNull(),
+});
+
+export const insertAdPlacementSchema = createInsertSchema(adPlacements).omit({
+  id: true,
+});
+
+export type InsertAdPlacement = z.infer<typeof insertAdPlacementSchema>;
+export type AdPlacement = typeof adPlacements.$inferSelect;
+
+// Advertisements table
+export const advertisements = pgTable("advertisements", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  placementId: integer("placement_id").notNull().references(() => adPlacements.id),
+  imageUrl: text("image_url").notNull(),
+  linkUrl: text("link_url").notNull(),
+  altText: text("alt_text"),
+  startDate: timestamp("start_date").defaultNow().notNull(),
+  endDate: timestamp("end_date"),
+  active: boolean("active").default(true).notNull(),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  clickCount: integer("click_count").default(0),
+  viewCount: integer("view_count").default(0),
+  sponsorName: text("sponsor_name"),
+  sponsorLogo: text("sponsor_logo"),
+});
+
+export const insertAdvertisementSchema = createInsertSchema(advertisements).omit({
+  id: true,
+  clickCount: true,
+  viewCount: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertAdvertisement = z.infer<typeof insertAdvertisementSchema>;
+export type Advertisement = typeof advertisements.$inferSelect;

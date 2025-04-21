@@ -5,7 +5,9 @@ import {
   analysts, type Analyst, type InsertAnalyst,
   analysis, type Analysis, type InsertAnalysis,
   videos, type Video, type InsertVideo,
-  userPreferences, type UserPreferences, type InsertUserPreferences
+  userPreferences, type UserPreferences, type InsertUserPreferences,
+  adPlacements, type AdPlacement, type InsertAdPlacement,
+  advertisements, type Advertisement, type InsertAdvertisement
 } from "@shared/schema";
 
 export interface IStorage {
@@ -62,6 +64,29 @@ export interface IStorage {
   getVideos(limit?: number): Promise<Video[]>;
   getFeaturedVideo(): Promise<Video | undefined>;
   createVideo(video: InsertVideo): Promise<Video>;
+
+  // Ad Placement operations
+  getAdPlacements(): Promise<AdPlacement[]>;
+  getAdPlacementsByPage(page: string): Promise<AdPlacement[]>;
+  getAdPlacementsBySection(section: string): Promise<AdPlacement[]>;
+  getAdPlacementsByPageAndSection(page: string, section: string): Promise<AdPlacement[]>;
+  getAdPlacement(id: number): Promise<AdPlacement | undefined>;
+  getAdPlacementBySlot(slot: string): Promise<AdPlacement | undefined>;
+  createAdPlacement(placement: InsertAdPlacement): Promise<AdPlacement>;
+  updateAdPlacement(id: number, placement: Partial<InsertAdPlacement>): Promise<AdPlacement | undefined>;
+  deleteAdPlacement(id: number): Promise<boolean>;
+  
+  // Advertisement operations
+  getAdvertisements(): Promise<Advertisement[]>;
+  getActiveAdvertisements(): Promise<Advertisement[]>;
+  getAdvertisementsByPlacement(placementId: number): Promise<Advertisement[]>;
+  getAdvertisement(id: number): Promise<Advertisement | undefined>;
+  getActiveAdvertisementForPlacement(placementId: number): Promise<Advertisement | undefined>;
+  createAdvertisement(ad: InsertAdvertisement): Promise<Advertisement>;
+  updateAdvertisement(id: number, ad: Partial<InsertAdvertisement>): Promise<Advertisement | undefined>;
+  deleteAdvertisement(id: number): Promise<boolean>;
+  incrementAdClick(id: number): Promise<Advertisement | undefined>;
+  incrementAdView(id: number): Promise<Advertisement | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -72,6 +97,8 @@ export class MemStorage implements IStorage {
   private analysis: Map<number, Analysis>;
   private videos: Map<number, Video>;
   private userPreferences: Map<number, UserPreferences>;
+  private adPlacements: Map<number, AdPlacement>;
+  private advertisements: Map<number, Advertisement>;
   
   private userId: number = 1;
   private categoryId: number = 1;
@@ -80,6 +107,8 @@ export class MemStorage implements IStorage {
   private analysisId: number = 1;
   private videoId: number = 1;
   private userPreferenceId: number = 1;
+  private adPlacementId: number = 1;
+  private advertisementId: number = 1;
 
   constructor() {
     this.users = new Map();
@@ -89,6 +118,8 @@ export class MemStorage implements IStorage {
     this.analysis = new Map();
     this.videos = new Map();
     this.userPreferences = new Map();
+    this.adPlacements = new Map();
+    this.advertisements = new Map();
     
     // Initialize with default categories
     this.initializeData();
