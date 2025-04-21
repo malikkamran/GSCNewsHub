@@ -11,22 +11,62 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { ChevronRight, Search, FileText, Tag, Calendar, Eye } from "lucide-react";
+import { ChevronRight, Search, FileText, Tag, Calendar, Eye, Info } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { Article as BaseArticle, Category } from "@/lib/types";
 
 // Extended Article interface with category property added by the search API
 interface ArticleWithCategory extends BaseArticle {
   category?: Category;
+  publishedBy?: string; // Add publishedBy field which might be returned by the search API
 }
 
 interface SearchResult {
   articles: ArticleWithCategory[];
   total: number;
+}
+
+// Utility function to highlight matched terms in text
+function highlightSearchTerms(text: string, query: string): React.ReactNode {
+  if (!query || !text) return text;
+  
+  const terms = query.toLowerCase().split(/\s+/).filter(term => term.length > 1);
+  
+  // If no valid terms, return original text
+  if (terms.length === 0) return text;
+  
+  // Escape special regex characters in search terms
+  const escapedTerms = terms.map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  
+  // Create regex pattern with word boundaries where possible
+  const pattern = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
+  
+  // Split text by the pattern
+  const parts = text.split(pattern);
+  
+  // Map parts to either regular text or highlighted spans
+  return parts.map((part, index) => {
+    // Check if this part matches any search term (case insensitive)
+    const isMatch = terms.some(term => part.toLowerCase().includes(term));
+    
+    return isMatch ? (
+      <span key={index} className="bg-yellow-100 font-medium">
+        {part}
+      </span>
+    ) : (
+      part
+    );
+  });
 }
 
 export default function SearchPage() {
@@ -37,10 +77,55 @@ export default function SearchPage() {
   const searchParams = new URLSearchParams(window.location.search);
   const query = searchParams.get("q") || "";
   
-  const { data: searchResults, isLoading, error } = useQuery<SearchResult>({
+  // Track detailed match reasons
+  const [matchReasons, setMatchReasons] = useState<{[key: number]: string[]}>({});
+  
+  // Use a separate function to handle search success to avoid TypeScript error with the onSuccess callback
+  const processSearchResults = (data: SearchResult) => {
+    // Extract basic match info from search results for the tooltip
+    const reasons: {[key: number]: string[]} = {};
+    
+    data.articles.forEach((article: ArticleWithCategory) => {
+      const articleReasons: string[] = [];
+      
+      // Check different parts of the article
+      if (article.title.toLowerCase().includes(query.toLowerCase())) {
+        articleReasons.push("Title match");
+      }
+      
+      if (article.summary.toLowerCase().includes(query.toLowerCase())) {
+        articleReasons.push("Summary match");
+      }
+      
+      if (article.content.toLowerCase().includes(query.toLowerCase())) {
+        articleReasons.push("Content match");
+      }
+      
+      if (article.category && article.category.name.toLowerCase().includes(query.toLowerCase())) {
+        articleReasons.push("Category match");
+      }
+      
+      if (article.publishedBy && article.publishedBy.toLowerCase().includes(query.toLowerCase())) {
+        articleReasons.push("Publisher match");
+      }
+      
+      reasons[article.id] = articleReasons.length ? articleReasons : ["Relevant match"];
+    });
+    
+    setMatchReasons(reasons);
+  };
+
+  const { data: searchResults, isLoading, error } = useQuery<SearchResult, Error>({
     queryKey: ["/api/search", query],
-    enabled: query.length > 0,
+    enabled: query.length > 0
   });
+  
+  // Process search results whenever they change
+  useEffect(() => {
+    if (searchResults) {
+      processSearchResults(searchResults);
+    }
+  }, [searchResults, query]);
   
   // Handle errors
   useEffect(() => {
@@ -154,7 +239,7 @@ export default function SearchPage() {
                             href={`/article/${article.slug}`} 
                             className="hover:underline"
                           >
-                            {article.title}
+                            {highlightSearchTerms(article.title, query)}
                           </a>
                         </h2>
                         
@@ -186,10 +271,30 @@ export default function SearchPage() {
                               </Badge>
                             )}
                           </span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="flex items-center cursor-help">
+                                  <Info className="h-4 w-4 ml-2 text-gray-400" />
+                                  <span className="sr-only">Match info</span>
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs bg-gray-900 text-white">
+                                <div className="text-sm">
+                                  <p className="font-semibold border-b pb-1 mb-1">Match information:</p>
+                                  <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    {matchReasons[article.id]?.map((reason, idx) => (
+                                      <li key={idx}>{reason}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                         
                         <p className="text-gray-600 mb-3">
-                          {article.summary}
+                          {highlightSearchTerms(article.summary, query)}
                         </p>
                         
                         <div className="flex justify-end">
