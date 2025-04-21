@@ -11,6 +11,8 @@ import {
   Menu,
   X,
   ChevronDown,
+  BarChart3,
+  ImageIcon,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -240,7 +242,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
             User Management
           </h3>
-          <nav className="space-y-2">
+          <nav className="space-y-2 mb-6">
             <Link to="/admin/users">
               {({ isActive }) => (
                 <Button
@@ -253,6 +255,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 >
                   <Users className="h-4 w-4 mr-2" />
                   Manage Users
+                </Button>
+              )}
+            </Link>
+          </nav>
+          
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            Advertising
+          </h3>
+          <nav className="space-y-2">
+            <Link to="/admin/ads">
+              {({ isActive }) => (
+                <Button
+                  variant={isActive ? "secondary" : "ghost"}
+                  size="sm"
+                  className={`w-full justify-start ${
+                    isActive ? "bg-gray-100 text-[#BB1919] font-medium" : ""
+                  }`}
+                  onClick={() => handleNavigate("/admin/ads")}
+                >
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Manage Advertisements
                 </Button>
               )}
             </Link>

@@ -947,7 +947,17 @@ export class MemStorage implements IStorage {
   
   async createAdPlacement(placement: InsertAdPlacement): Promise<AdPlacement> {
     const id = this.adPlacementId++;
-    const newPlacement: AdPlacement = { ...placement, id };
+    const newPlacement: AdPlacement = { 
+      id,
+      name: placement.name,
+      slot: placement.slot,
+      description: placement.description || null,
+      width: placement.width,
+      height: placement.height,
+      page: placement.page,
+      section: placement.section,
+      active: placement.active ?? true
+    };
     this.adPlacements.set(id, newPlacement);
     return newPlacement;
   }
@@ -1022,12 +1032,27 @@ export class MemStorage implements IStorage {
   
   async createAdvertisement(ad: InsertAdvertisement): Promise<Advertisement> {
     const id = this.advertisementId++;
+    const now = new Date();
+    
     const newAd: Advertisement = {
-      ...ad,
       id,
+      title: ad.title,
+      description: ad.description || null,
+      placementId: ad.placementId,
+      imageUrl: ad.imageUrl,
+      linkUrl: ad.linkUrl,
+      altText: ad.altText || null,
+      startDate: ad.startDate || now,
+      endDate: ad.endDate || null,
+      active: ad.active ?? true,
+      priority: ad.priority || 1,
+      createdBy: ad.createdBy || null,
+      createdAt: now,
+      updatedAt: now,
       clicks: 0,
       views: 0,
-      createdAt: new Date()
+      sponsorName: ad.sponsorName || null,
+      sponsorLogo: ad.sponsorLogo || null
     };
     
     this.advertisements.set(id, newAd);
@@ -1040,7 +1065,19 @@ export class MemStorage implements IStorage {
     
     const updatedAd: Advertisement = {
       ...existingAd,
-      ...adData
+      title: adData.title ?? existingAd.title,
+      description: adData.description !== undefined ? adData.description : existingAd.description,
+      placementId: adData.placementId ?? existingAd.placementId,
+      imageUrl: adData.imageUrl ?? existingAd.imageUrl,
+      linkUrl: adData.linkUrl ?? existingAd.linkUrl,
+      altText: adData.altText !== undefined ? adData.altText : existingAd.altText,
+      startDate: adData.startDate ?? existingAd.startDate,
+      endDate: adData.endDate !== undefined ? adData.endDate : existingAd.endDate,
+      active: adData.active ?? existingAd.active,
+      priority: adData.priority ?? existingAd.priority,
+      updatedAt: new Date(),
+      sponsorName: adData.sponsorName !== undefined ? adData.sponsorName : existingAd.sponsorName,
+      sponsorLogo: adData.sponsorLogo !== undefined ? adData.sponsorLogo : existingAd.sponsorLogo
     };
     
     this.advertisements.set(id, updatedAd);
@@ -1057,7 +1094,8 @@ export class MemStorage implements IStorage {
     
     const updatedAd: Advertisement = {
       ...ad,
-      clicks: (ad.clicks || 0) + 1
+      clicks: (ad.clicks || 0) + 1,
+      updatedAt: new Date()
     };
     
     this.advertisements.set(id, updatedAd);
@@ -1070,7 +1108,8 @@ export class MemStorage implements IStorage {
     
     const updatedAd: Advertisement = {
       ...ad,
-      views: (ad.views || 0) + 1
+      views: (ad.views || 0) + 1,
+      updatedAt: new Date()
     };
     
     this.advertisements.set(id, updatedAd);

@@ -781,13 +781,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Ad Placement endpoints
-  app.get('/api/ad-placements', isAuthenticated, async (req, res) => {
+  app.get('/api/ad-placements', async (req, res) => {
     try {
-      // Check if user is admin
-      if (!currentUser || currentUser.role !== 'admin') {
-        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
-      }
-      
       const placements = await storage.getAdPlacements();
       res.json({ success: true, placements });
     } catch (error) {
@@ -795,9 +790,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/ad-placements/page/:page', isAuthenticated, async (req, res) => {
+  app.get('/api/ad-placements/page/:page', async (req, res) => {
     try {
-      // Check if user is admin
       if (!currentUser || currentUser.role !== 'admin') {
         return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
       }

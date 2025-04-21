@@ -57,6 +57,7 @@ function Router() {
       <ProtectedRoute path="/admin/articles/edit/:id" component={AdminEditArticle}/>
       <ProtectedRoute path="/admin/categories" component={AdminCategories}/>
       <ProtectedRoute path="/admin/users" component={AdminUsers}/>
+      <ProtectedRoute path="/admin/ads" component={AdManagement}/>
       
       <Route component={NotFound} />
     </Switch>
