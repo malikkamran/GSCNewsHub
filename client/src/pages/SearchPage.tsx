@@ -11,7 +11,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { ChevronRight, Search, FileText, Tag, Calendar, Eye, Info } from "lucide-react";
+import { ChevronRight, Search, FileText, Tag, Calendar, Eye, Info, Lightbulb } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,21 +37,49 @@ interface SearchResult {
   enhancedQuery?: string;
   queryContext?: string;
   processingTime?: number;
+  relatedTerms?: string[];
 }
 
 // Utility function to highlight matched terms in text
-function highlightSearchTerms(text: string, query: string): React.ReactNode {
-  if (!query || !text) return text;
+function highlightSearchTerms(text: string, query: string, enhancedQuery?: string, relatedTerms?: string[]): React.ReactNode {
+  if (!text) return text;
+  if (!query && !enhancedQuery && (!relatedTerms || relatedTerms.length === 0)) return text;
   
-  const terms = query.toLowerCase().split(/\s+/).filter(term => term.length > 1);
+  // Collect all terms to highlight
+  const allTerms: string[] = [];
+  
+  // Add original query terms
+  if (query) {
+    const queryTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 1);
+    allTerms.push(...queryTerms);
+  }
+  
+  // Add enhanced query terms if different from original
+  if (enhancedQuery && enhancedQuery.toLowerCase() !== query.toLowerCase()) {
+    const enhancedTerms = enhancedQuery.toLowerCase().split(/\s+/).filter(term => term.length > 1);
+    allTerms.push(...enhancedTerms);
+  }
+  
+  // Add related terms
+  if (relatedTerms && relatedTerms.length > 0) {
+    // For each related term, split multi-word terms
+    relatedTerms.forEach(term => {
+      const termParts = term.toLowerCase().split(/\s+/).filter(part => part.length > 1);
+      allTerms.push(...termParts);
+    });
+  }
+  
+  // Remove duplicates and sort by length (descending)
+  const uniqueTerms = Array.from(new Set(allTerms))
+    .sort((a, b) => b.length - a.length);
   
   // If no valid terms, return original text
-  if (terms.length === 0) return text;
+  if (uniqueTerms.length === 0) return text;
   
   // Escape special regex characters in search terms
-  const escapedTerms = terms.map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const escapedTerms = uniqueTerms.map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   
-  // Create regex pattern with word boundaries where possible
+  // Create regex pattern
   const pattern = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
   
   // Split text by the pattern
@@ -60,15 +88,31 @@ function highlightSearchTerms(text: string, query: string): React.ReactNode {
   // Map parts to either regular text or highlighted spans
   return parts.map((part, index) => {
     // Check if this part matches any search term (case insensitive)
-    const isMatch = terms.some(term => part.toLowerCase().includes(term));
-    
-    return isMatch ? (
-      <span key={index} className="bg-yellow-100 font-medium">
-        {part}
-      </span>
-    ) : (
-      part
+    const isMatch = uniqueTerms.some(term => 
+      part.toLowerCase() === term || 
+      part.toLowerCase().includes(term)
     );
+    
+    if (isMatch) {
+      // Determine highlighting style based on match type
+      const isPrimaryMatch = query.toLowerCase().split(/\s+/).some(term => 
+        part.toLowerCase() === term || part.toLowerCase().includes(term)
+      );
+      
+      return (
+        <span 
+          key={index} 
+          className={isPrimaryMatch 
+            ? "bg-yellow-100 font-medium" // Primary match (original query)
+            : "bg-blue-50 font-medium"    // Secondary match (enhanced or related terms)
+          }
+        >
+          {part}
+        </span>
+      );
+    } else {
+      return part;
+    }
   });
 }
 
@@ -269,7 +313,12 @@ export default function SearchPage() {
                             href={`/article/${article.slug}`} 
                             className="hover:underline"
                           >
-                            {highlightSearchTerms(article.title, query)}
+                            {highlightSearchTerms(
+                              article.title, 
+                              query, 
+                              searchResults.enhancedQuery,
+                              searchResults.relatedTerms
+                            )}
                           </a>
                         </h2>
                         
@@ -324,7 +373,12 @@ export default function SearchPage() {
                         </div>
                         
                         <p className="text-gray-600 mb-3">
-                          {highlightSearchTerms(article.summary, query)}
+                          {highlightSearchTerms(
+                            article.summary, 
+                            query, 
+                            searchResults.enhancedQuery,
+                            searchResults.relatedTerms
+                          )}
                         </p>
                         
                         <div className="flex justify-end">
