@@ -140,7 +140,7 @@ export default function AboutPage() {
               We welcome your feedback, story ideas, and inquiries. Please contact us at:
             </p>
             <p>
-              <strong>General Inquiries:</strong> info@gscsupplychainnews.com<br />
+              <strong>General Inquiries:</strong> info@gscnews.co<br />
               <strong>Editorial Team:</strong> editorial@gscsupplychainnews.com<br />
               <strong>Press Releases:</strong> press@gscsupplychainnews.com<br />
               <strong>Advertising:</strong> advertising@gscsupplychainnews.com
