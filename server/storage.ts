@@ -753,62 +753,159 @@ export class MemStorage implements IStorage {
     // Normalize query term
     const normalizedQuery = query.toLowerCase().trim();
     
-    // Split query into individual terms for better matching
-    const queryTerms = normalizedQuery.split(/\s+/).filter(term => term.length > 2);
+    // Split query into individual terms for better matching - include shorter terms now for more comprehensive search
+    const queryTerms = normalizedQuery.split(/\s+/).filter(term => term.length > 1);
+    
+    // Also get categories for semantic search
+    const categories = Array.from(this.categories.values());
     
     // Score and filter articles based on relevance
     const scoredArticles = allArticles.map(article => {
       let score = 0;
+      let matchDetails: string[] = [];
       
       // Check for matches in the title (highest weight)
       const titleLower = article.title.toLowerCase();
       if (titleLower.includes(normalizedQuery)) {
-        score += 10;
+        score += 15;
+        matchDetails.push("title:exact");
       }
       
       queryTerms.forEach(term => {
         if (titleLower.includes(term)) {
-          score += 5;
+          score += 8;
+          matchDetails.push(`title:term:${term}`);
         }
       });
+      
+      // Check for publisher match (good relevance signal)
+      if (article.publishedBy) {
+        const publisherLower = article.publishedBy.toLowerCase();
+        if (publisherLower.includes(normalizedQuery)) {
+          score += 7;
+          matchDetails.push("publisher:exact");
+        }
+        
+        queryTerms.forEach(term => {
+          if (publisherLower.includes(term)) {
+            score += 4;
+            matchDetails.push(`publisher:term:${term}`);
+          }
+        });
+      }
       
       // Check for matches in summary (medium weight)
       const summaryLower = article.summary.toLowerCase();
       if (summaryLower.includes(normalizedQuery)) {
-        score += 5;
+        score += 10;
+        matchDetails.push("summary:exact");
       }
       
       queryTerms.forEach(term => {
         if (summaryLower.includes(term)) {
-          score += 3;
+          score += 5;
+          matchDetails.push(`summary:term:${term}`);
         }
       });
       
       // Check for matches in content (lower weight but still important)
       const contentLower = article.content.toLowerCase();
       if (contentLower.includes(normalizedQuery)) {
-        score += 3;
+        score += 8;
+        matchDetails.push("content:exact");
       }
       
       queryTerms.forEach(term => {
         if (contentLower.includes(term)) {
-          score += 1;
+          // Count occurrences for content terms
+          const occurrences = (contentLower.match(new RegExp(term, 'g')) || []).length;
+          // Cap the bonus at 10 to prevent extremely long articles from dominating
+          const bonus = Math.min(occurrences, 10);
+          score += 2 + bonus;
+          matchDetails.push(`content:term:${term}:${occurrences}`);
         }
       });
       
       // Check for exact slug match
       const slugLower = article.slug.toLowerCase();
       if (slugLower.includes(normalizedQuery)) {
-        score += 8;
+        score += 10;
+        matchDetails.push("slug:exact");
       }
       
-      return { article, score };
+      queryTerms.forEach(term => {
+        if (slugLower.includes(term)) {
+          score += 6;
+          matchDetails.push(`slug:term:${term}`);
+        }
+      });
+      
+      // Check for category name match (very relevant for topic searches)
+      const category = categories.find(c => c.id === article.categoryId);
+      if (category) {
+        const categoryNameLower = category.name.toLowerCase();
+        if (categoryNameLower.includes(normalizedQuery)) {
+          score += 12;
+          matchDetails.push("category:exact");
+        }
+        
+        queryTerms.forEach(term => {
+          if (categoryNameLower.includes(term)) {
+            score += 7;
+            matchDetails.push(`category:term:${term}`);
+          }
+        });
+      }
+      
+      // Word position boost - terms appearing earlier in content are more relevant
+      queryTerms.forEach(term => {
+        const titlePos = titleLower.indexOf(term);
+        if (titlePos >= 0 && titlePos < 20) {
+          score += 3;
+          matchDetails.push(`title:early:${term}`);
+        }
+        
+        const summaryPos = summaryLower.indexOf(term);
+        if (summaryPos >= 0 && summaryPos < 30) {
+          score += 2;
+          matchDetails.push(`summary:early:${term}`);
+        }
+        
+        const contentPos = contentLower.indexOf(term);
+        if (contentPos >= 0 && contentPos < 100) {
+          score += 2;
+          matchDetails.push(`content:early:${term}`);
+        }
+      });
+      
+      // Recency boost - newer articles get a slight boost
+      const articleDate = new Date(article.publishedAt).getTime();
+      const now = new Date().getTime();
+      const daysDiff = Math.floor((now - articleDate) / (1000 * 60 * 60 * 24));
+      if (daysDiff < 30) {
+        const recencyBoost = Math.max(0, 3 - Math.floor(daysDiff / 10));
+        score += recencyBoost;
+        if (recencyBoost > 0) {
+          matchDetails.push(`recency:${recencyBoost}`);
+        }
+      }
+      
+      return { article, score, matchDetails };
     });
     
     // Filter out non-matching articles and sort by score
     const relevantArticles = scoredArticles
       .filter(item => item.score > 0)
       .sort((a, b) => b.score - a.score);
+    
+    console.log(`Search for "${query}" found ${relevantArticles.length} articles`);
+    if (relevantArticles.length > 0) {
+      console.log("Top 3 results:", relevantArticles.slice(0, 3).map(r => ({
+        title: r.article.title,
+        score: r.score,
+        matches: r.matchDetails
+      })));
+    }
     
     // Apply pagination
     const paginatedArticles = relevantArticles
