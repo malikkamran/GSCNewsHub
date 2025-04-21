@@ -145,13 +145,7 @@ export default function AboutPage() {
               <strong>Press Releases:</strong> press@gscsupplychainnews.com<br />
               <strong>Advertising:</strong> advertising@gscsupplychainnews.com
             </p>
-            <p>
-              <strong>Address:</strong><br />
-              GSC Supply Chain News<br />
-              1234 Supply Chain Drive<br />
-              Logistics Center, NY 10001<br />
-              USA
-            </p>
+
           </div>
         </div>
       </div>
