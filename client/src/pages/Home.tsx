@@ -1,5 +1,4 @@
 import { Helmet } from "react-helmet";
-import Breadcrumb from "@/components/common/Breadcrumb";
 import AdBanner from "@/components/layout/AdBanner";
 import TopStories from "@/components/home/TopStories";
 import LatestNews from "@/components/home/LatestNews";
@@ -8,10 +7,6 @@ import MostRead from "@/components/sidebar/MostRead";
 import FeaturedVideo from "@/components/sidebar/FeaturedVideo";
 
 export default function Home() {
-  const breadcrumbItems = [
-    { label: "Home", href: "/", active: true }
-  ];
-
   return (
     <>
       <Helmet>
@@ -19,12 +14,8 @@ export default function Home() {
         <meta name="description" content="Get the latest news and updates on global supply chain, logistics, transportation, and trade from GSC Supply Chain News." />
       </Helmet>
       
-      
-      {/* Breadcrumb */}
-      <Breadcrumb items={breadcrumbItems} />
-      
       {/* Main Content Area */}
-      <main className="container mx-auto px-4 py-4 mt-2">
+      <main className="container mx-auto px-4 py-4">
         {/* Red TOP NEWS bar */}
         <div className="bg-[#BB1919] mb-4">
           <h2 className="text-white text-xl font-bold py-2 px-3 font-roboto">TOP NEWS</h2>
