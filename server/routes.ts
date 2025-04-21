@@ -2,7 +2,17 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertArticleSchema, insertCategorySchema, insertUserSchema, insertAnalystSchema, insertAnalysisSchema, insertVideoSchema, insertUserPreferencesSchema } from "@shared/schema";
+import { 
+  insertArticleSchema, 
+  insertCategorySchema, 
+  insertUserSchema, 
+  insertAnalystSchema, 
+  insertAnalysisSchema, 
+  insertVideoSchema, 
+  insertUserPreferencesSchema,
+  insertAdPlacementSchema,
+  insertAdvertisementSchema
+} from "@shared/schema";
 
 // Authentication state
 let isLoggedIn = false;
@@ -767,6 +777,328 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({ success: true });
     } catch (error) {
       return res.status(500).json({ success: false, message: "Failed to delete user" });
+    }
+  });
+
+  // Ad Placement endpoints
+  app.get('/api/ad-placements', isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is admin
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
+      }
+      
+      const placements = await storage.getAdPlacements();
+      res.json({ success: true, placements });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to fetch ad placements' });
+    }
+  });
+
+  app.get('/api/ad-placements/page/:page', isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is admin
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
+      }
+
+      const { page } = req.params;
+      const placements = await storage.getAdPlacementsByPage(page);
+      res.json({ success: true, placements });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to fetch ad placements by page' });
+    }
+  });
+
+  app.get('/api/ad-placements/section/:section', isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is admin
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
+      }
+
+      const { section } = req.params;
+      const placements = await storage.getAdPlacementsBySection(section);
+      res.json({ success: true, placements });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to fetch ad placements by section' });
+    }
+  });
+
+  app.get('/api/ad-placements/:id', isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is admin
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
+      }
+
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid placement ID' });
+      }
+
+      const placement = await storage.getAdPlacement(id);
+      if (!placement) {
+        return res.status(404).json({ success: false, message: 'Ad placement not found' });
+      }
+
+      res.json({ success: true, placement });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to fetch ad placement' });
+    }
+  });
+
+  app.post('/api/ad-placements', isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is admin
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
+      }
+
+      // Validate request data
+      const placementData = insertAdPlacementSchema.parse(req.body);
+
+      // Check if slot already exists
+      const existingPlacement = await storage.getAdPlacementBySlot(placementData.slot);
+      if (existingPlacement) {
+        return res.status(400).json({ success: false, message: 'Ad slot already exists' });
+      }
+
+      // Create placement
+      const placement = await storage.createAdPlacement(placementData);
+      res.status(201).json({ success: true, placement });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, message: 'Invalid placement data', errors: error.errors });
+      }
+      res.status(500).json({ success: false, message: 'Failed to create ad placement' });
+    }
+  });
+
+  app.put('/api/ad-placements/:id', isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is admin
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
+      }
+
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid placement ID' });
+      }
+
+      // Update placement
+      const updatedPlacement = await storage.updateAdPlacement(id, req.body);
+      if (!updatedPlacement) {
+        return res.status(404).json({ success: false, message: 'Ad placement not found' });
+      }
+
+      res.json({ success: true, placement: updatedPlacement });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, message: 'Invalid placement data', errors: error.errors });
+      }
+      res.status(500).json({ success: false, message: 'Failed to update ad placement' });
+    }
+  });
+
+  app.delete('/api/ad-placements/:id', isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is admin
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
+      }
+
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid placement ID' });
+      }
+
+      // Delete placement
+      const result = await storage.deleteAdPlacement(id);
+      if (!result) {
+        return res.status(404).json({ success: false, message: 'Ad placement not found' });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to delete ad placement' });
+    }
+  });
+
+  // Advertisement endpoints
+  app.get('/api/advertisements', isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is admin
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
+      }
+      
+      const advertisements = await storage.getAdvertisements();
+      res.json({ success: true, advertisements });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to fetch advertisements' });
+    }
+  });
+
+  app.get('/api/advertisements/active', async (req, res) => {
+    try {
+      const advertisements = await storage.getActiveAdvertisements();
+      res.json({ success: true, advertisements });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to fetch active advertisements' });
+    }
+  });
+
+  app.get('/api/advertisements/placement/:placementId', async (req, res) => {
+    try {
+      const placementId = parseInt(req.params.placementId);
+      if (isNaN(placementId)) {
+        return res.status(400).json({ success: false, message: 'Invalid placement ID' });
+      }
+
+      const advertisements = await storage.getAdvertisementsByPlacement(placementId);
+      res.json({ success: true, advertisements });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to fetch advertisements by placement' });
+    }
+  });
+
+  app.get('/api/advertisements/:id', isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is admin
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
+      }
+
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid advertisement ID' });
+      }
+
+      const advertisement = await storage.getAdvertisement(id);
+      if (!advertisement) {
+        return res.status(404).json({ success: false, message: 'Advertisement not found' });
+      }
+
+      res.json({ success: true, advertisement });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to fetch advertisement' });
+    }
+  });
+
+  app.get('/api/advertisements/active/placement/:placementId', async (req, res) => {
+    try {
+      const placementId = parseInt(req.params.placementId);
+      if (isNaN(placementId)) {
+        return res.status(400).json({ success: false, message: 'Invalid placement ID' });
+      }
+
+      const advertisement = await storage.getActiveAdvertisementForPlacement(placementId);
+      if (!advertisement) {
+        return res.status(404).json({ success: false, message: 'No active advertisement found for this placement' });
+      }
+
+      // Track view
+      await storage.incrementAdView(advertisement.id);
+
+      res.json({ success: true, advertisement });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to fetch active advertisement for placement' });
+    }
+  });
+
+  app.post('/api/advertisements', isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is admin
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
+      }
+
+      // Validate request data
+      const advertisementData = insertAdvertisementSchema.parse({
+        ...req.body,
+        createdBy: currentUser.id
+      });
+
+      // Create advertisement
+      const advertisement = await storage.createAdvertisement(advertisementData);
+      res.status(201).json({ success: true, advertisement });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, message: 'Invalid advertisement data', errors: error.errors });
+      }
+      res.status(500).json({ success: false, message: 'Failed to create advertisement' });
+    }
+  });
+
+  app.put('/api/advertisements/:id', isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is admin
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
+      }
+
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid advertisement ID' });
+      }
+
+      // Update advertisement
+      const updatedAdvertisement = await storage.updateAdvertisement(id, req.body);
+      if (!updatedAdvertisement) {
+        return res.status(404).json({ success: false, message: 'Advertisement not found' });
+      }
+
+      res.json({ success: true, advertisement: updatedAdvertisement });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, message: 'Invalid advertisement data', errors: error.errors });
+      }
+      res.status(500).json({ success: false, message: 'Failed to update advertisement' });
+    }
+  });
+
+  app.delete('/api/advertisements/:id', isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is admin
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Forbidden: Admin access required' });
+      }
+
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid advertisement ID' });
+      }
+
+      // Delete advertisement
+      const result = await storage.deleteAdvertisement(id);
+      if (!result) {
+        return res.status(404).json({ success: false, message: 'Advertisement not found' });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to delete advertisement' });
+    }
+  });
+
+  app.post('/api/advertisements/:id/click', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid advertisement ID' });
+      }
+
+      // Increment click count
+      const advertisement = await storage.incrementAdClick(id);
+      if (!advertisement) {
+        return res.status(404).json({ success: false, message: 'Advertisement not found' });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to track advertisement click' });
     }
   });
 
