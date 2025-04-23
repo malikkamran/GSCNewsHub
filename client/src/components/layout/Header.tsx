@@ -54,9 +54,11 @@ export default function Header() {
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="flex items-center gap-2">
-                    <Settings size={14} />
-                    <span>Preferences</span>
+                  <DropdownMenuItem className="flex items-center gap-2" asChild>
+                    <Link href="/preferences">
+                      <Settings size={14} />
+                      <span>Preferences</span>
+                    </Link>
                   </DropdownMenuItem>
                   {user.role === 'admin' && (
                     <DropdownMenuItem className="flex items-center gap-2" asChild>

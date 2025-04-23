@@ -19,7 +19,8 @@ import SearchPage from "@/pages/SearchPage";
 import AuthPage from "@/pages/auth-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
-import UserPreferencesPage from "./pages/UserPreferencesPage"; // Added import
+import UserPreferencesPage from "./pages/UserPreferencesPage";
+import ProtectedRoute from "./lib/protected-route"; // Added import
 
 // Admin pages
 import AdminLogin from "@/pages/admin/Login";
@@ -49,7 +50,11 @@ function Router() {
       <Route path="/contact" component={ContactPage}/>
       <Route path="/advertise" component={AdvertisePage}/>
       <Route path="/search" component={SearchPage}/>
-      <Route path="/preferences" component={UserPreferencesPage} /> {/* Added preferences route */}
+      <Route path="/preferences" component={() => (
+          <ProtectedRoute>
+            <UserPreferencesPage />
+          </ProtectedRoute>
+        )} /> {/* Added preferences route */}
 
       {/* Admin routes */}
       <Route path="/admin/login" component={AdminLogin}/>
