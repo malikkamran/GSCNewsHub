@@ -20,7 +20,6 @@ import AuthPage from "@/pages/auth-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import UserPreferencesPage from "./pages/UserPreferencesPage";
-import ProtectedRoute from "./lib/protected-route"; // Added import
 
 // Admin pages
 import AdminLogin from "@/pages/admin/Login";
