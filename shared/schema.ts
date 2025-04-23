@@ -167,11 +167,13 @@ export const advertisements = pgTable("advertisements", {
   placementId: integer("placement_id").notNull().references(() => adPlacements.id),
   imageUrl: text("image_url").notNull(),
   linkUrl: text("link_url").notNull(),
+  openInNewTab: boolean("open_in_new_tab").default(true), // Added new field
   altText: text("alt_text"),
   startDate: timestamp("start_date").defaultNow().notNull(),
   endDate: timestamp("end_date"),
   active: boolean("active").default(true).notNull(),
   priority: integer("priority").default(1),
+  position: text("position").default("middle"), // Added new field for position (top, middle, bottom)
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

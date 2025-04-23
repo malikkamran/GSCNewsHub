@@ -9,6 +9,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 
 // UI Components
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -75,11 +76,13 @@ const advertisementSchema = z.object({
   placementId: z.coerce.number().min(1, "Placement is required"),
   imageUrl: z.string().url("Must be a valid URL"),
   linkUrl: z.string().url("Must be a valid URL"),
+  openInNewTab: z.boolean().default(true),
   altText: z.string().nullable().optional(),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().nullable().optional(),
   active: z.boolean().default(true),
   priority: z.coerce.number().min(1).max(10).default(5),
+  position: z.enum(["top", "middle", "bottom"]).default("middle"),
   sponsorName: z.string().nullable().optional(),
   sponsorLogo: z.string().url("Must be a valid URL").nullable().optional(),
 });
@@ -119,11 +122,13 @@ export default function AdManagement() {
       placementId: 1, // Default to first placement instead of 0
       imageUrl: "",
       linkUrl: "",
+      openInNewTab: true,
       altText: "",
       startDate: new Date().toISOString().split("T")[0],
       endDate: "",
       active: true,
       priority: 5,
+      position: "middle",
       sponsorName: "",
       sponsorLogo: "",
     },
@@ -349,11 +354,13 @@ export default function AdManagement() {
       placementId: ad.placementId,
       imageUrl: ad.imageUrl,
       linkUrl: ad.linkUrl,
+      openInNewTab: ad.openInNewTab !== undefined ? ad.openInNewTab : true,
       altText: ad.altText || "",
       startDate: new Date(ad.startDate).toISOString().split("T")[0],
       endDate: ad.endDate ? new Date(ad.endDate).toISOString().split("T")[0] : "",
       active: ad.active,
       priority: ad.priority,
+      position: ad.position || "middle",
       sponsorName: ad.sponsorName || "",
       sponsorLogo: ad.sponsorLogo || "",
     });
@@ -1003,6 +1010,27 @@ export default function AdManagement() {
               
               <FormField
                 control={advertisementForm.control}
+                name="openInNewTab"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Open link in new tab</FormLabel>
+                      <FormDescription>
+                        When checked, the advertisement link will open in a new browser tab
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={advertisementForm.control}
                 name="altText"
                 render={({ field }) => (
                   <FormItem>
@@ -1045,7 +1073,7 @@ export default function AdManagement() {
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={advertisementForm.control}
                   name="priority"
@@ -1061,6 +1089,34 @@ export default function AdManagement() {
                         />
                       </FormControl>
                       <FormDescription>Lower values have higher priority.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={advertisementForm.control}
+                  name="position"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Position</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select position" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="top">Top</SelectItem>
+                          <SelectItem value="middle">Middle</SelectItem>
+                          <SelectItem value="bottom">Bottom</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>Vertical position within placement</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
