@@ -44,11 +44,13 @@ type Advertisement = {
   placementId: number;
   imageUrl: string;
   linkUrl: string;
+  openInNewTab?: boolean;
   altText: string | null;
   startDate: string;
   endDate: string | null;
   active: boolean;
   priority: number;
+  position?: string;
   createdBy: number;
   createdAt: string;
   updatedAt: string;
@@ -622,6 +624,11 @@ export default function AdManagement() {
                                   <div>
                                     <span className="block">{placement.name}</span>
                                     <span className="text-xs text-muted-foreground">{placement.page}/{placement.section}</span>
+                                    <div className="text-xs mt-1">
+                                      <span className="text-muted-foreground">Position: </span>
+                                      <span className="font-medium">{ad.position || "middle"}</span>
+                                      {ad.openInNewTab && <span className="ml-2 px-1 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">Opens in new tab</span>}
+                                    </div>
                                   </div>
                                 ) : (
                                   <span className="text-red-500">Unknown placement</span>

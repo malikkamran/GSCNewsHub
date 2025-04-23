@@ -16,6 +16,8 @@ interface AdData {
   sponsorName: string | null;
   sponsorLogo: string | null;
   placementId: number;
+  openInNewTab?: boolean;
+  position?: string;
 }
 
 export default function AdBanner({ slot, className = "" }: AdBannerProps) {
@@ -113,11 +115,16 @@ export default function AdBanner({ slot, className = "" }: AdBannerProps) {
     return null; // Don't show anything if no ad is available
   }
 
+  // Determine position class based on the ad's position property
+  const positionClass = ad.position === 'top' ? 'mb-4' : 
+                       ad.position === 'bottom' ? 'mt-4' : 
+                       'my-2'; // default for middle position
+
   return (
-    <div className={`ad-banner ${className}`}>
+    <div className={`ad-banner ${className} ${positionClass}`}>
       <a 
         href={ad.linkUrl} 
-        target="_blank"
+        target={ad.openInNewTab !== false ? "_blank" : "_self"}
         rel="noopener noreferrer" 
         onClick={handleAdClick}
         className="block relative"
