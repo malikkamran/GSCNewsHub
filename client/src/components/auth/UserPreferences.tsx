@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { UserPreferences as UserPreferenceType } from "@shared/schema";
 
 export function UserPreferences() {
   const { user } = useAuth();
@@ -20,7 +21,7 @@ export function UserPreferences() {
   });
 
   // Fetch user preferences
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<{success: boolean, preferences: UserPreferenceType[]}>({
     queryKey: ['/api/user-preferences'],
     enabled: !!user,
   });
@@ -29,6 +30,9 @@ export function UserPreferences() {
   const userPreferencesData = data?.preferences && data.preferences.length > 0 
     ? data.preferences[0] 
     : null;
+    
+  // Debug user preferences data
+  console.log("User preferences data:", data);
 
   // Update preferences mutation
   const updatePreferences = useMutation({
@@ -67,10 +71,16 @@ export function UserPreferences() {
   });
 
   useEffect(() => {
-    if (userPreferences) {
-      setPreferences(userPreferences);
+    if (userPreferencesData) {
+      // Extract preference values from the data
+      setPreferences({
+        notificationsEnabled: userPreferencesData.notificationsEnabled || false,
+        emailDigest: userPreferencesData.emailDigest || false,
+        digestFrequency: userPreferencesData.digestFrequency || "weekly",
+        theme: userPreferencesData.theme || "light"
+      });
     }
-  }, [userPreferences]);
+  }, [userPreferencesData]);
 
   const handlePreferenceChange = (key: keyof typeof preferences, value: any) => {
     // Update the local state first
@@ -112,31 +122,38 @@ export function UserPreferences() {
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
           <h3 className="font-medium">Digest Frequency</h3>
-          <Select
-            value={preferences.digestFrequency}
-            onValueChange={(value) => handlePreferenceChange('digestFrequency', value)}
-            disabled={!preferences.emailDigest}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select frequency" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="daily">Daily</SelectItem>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
-            </SelectContent>
-          </Select>
+          <div>
+            <Select
+              value={preferences.digestFrequency || "weekly"}
+              onValueChange={(value) => handlePreferenceChange('digestFrequency', value)}
+              disabled={!preferences.emailDigest}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select frequency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+              </SelectContent>
+            </Select>
+            {!preferences.emailDigest && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Enable email digest to select frequency
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">
           <h3 className="font-medium">Theme</h3>
           <Select
-            value={preferences.theme}
+            value={preferences.theme || "light"}
             onValueChange={(value) => handlePreferenceChange('theme', value)}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select theme" />
             </SelectTrigger>
             <SelectContent>
