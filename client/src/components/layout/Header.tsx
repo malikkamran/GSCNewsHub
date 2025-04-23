@@ -32,9 +32,15 @@ export default function Header() {
   };
 
   const { user, logoutMutation } = useAuth();
+  const [, navigate] = useLocation();
 
   const handleLogout = () => {
-    logoutMutation.mutate();
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        // Programmatic navigation after logout
+        navigate('/');
+      }
+    });
   };
 
   return (
@@ -271,7 +277,10 @@ export default function Header() {
                   <Button 
                     variant="ghost" 
                     className="text-gray-300 px-2 py-1 hover:text-white" 
-                    onClick={handleLogout}
+                    onClick={() => {
+                      handleLogout();
+                      toggleMobileMenu(); // Also close the mobile menu
+                    }}
                   >
                     <LogOut size={16} className="mr-1" />
                     <span>Log out</span>
@@ -280,7 +289,7 @@ export default function Header() {
               </li>
             ) : (
               <li>
-                <Link href="/auth">
+                <Link href="/auth" onClick={() => toggleMobileMenu()}>
                   <span className="mobile-nav-link block py-2 border-b border-gray-700">
                     Sign in / Register
                   </span>
@@ -288,7 +297,7 @@ export default function Header() {
               </li>
             )}
             <li>
-              <Link href="/">
+              <Link href="/" onClick={() => toggleMobileMenu()}>
                 <span className="mobile-nav-link block py-2 border-b border-gray-700">Home</span>
               </Link>
             </li>

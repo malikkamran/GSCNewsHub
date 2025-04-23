@@ -48,11 +48,16 @@ function LoginForm() {
   });
   
   function onSubmit(values: LoginValues) {
-    // Add a callback to redirect after successful login
-    loginMutation.mutate(values);
-    
-    // The redirection will be handled by the AuthPage component's condition
-    // which checks the user role and redirects accordingly
+    loginMutation.mutate(values, {
+      onSuccess: (user) => {
+        // Programmatic navigation after successful login
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/');
+        }
+      }
+    });
   }
   
   return (
@@ -105,6 +110,7 @@ function LoginForm() {
 
 function RegisterForm() {
   const { registerMutation } = useAuth();
+  const [, navigate] = useLocation();
   
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
@@ -121,7 +127,16 @@ function RegisterForm() {
   function onSubmit(values: RegisterValues) {
     // Remove confirmPassword as it's not in the schema
     const { confirmPassword, ...userData } = values;
-    registerMutation.mutate(userData);
+    registerMutation.mutate(userData, {
+      onSuccess: (user) => {
+        // Programmatic navigation after successful registration
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/');
+        }
+      }
+    });
   }
   
   return (
