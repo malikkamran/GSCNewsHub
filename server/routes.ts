@@ -187,39 +187,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ success: false, message: "Not authenticated" });
       }
       
-      // Validate request data
-      const preferenceData = insertUserPreferencesSchema.parse({
-        ...req.body,
-        userId: currentUser.id
-      });
+      // Get the data from the request
+      const { notificationsEnabled, emailDigest, digestFrequency, theme, categoryId } = req.body;
       
-      // Check if preference already exists for this category
-      if (preferenceData.categoryId) {
-        const existingPreference = await storage.getUserPreferencesByCategory(
+      console.log("Received user preferences:", req.body);
+      
+      // Prepare the preference data with defaults for missing values
+      const preferenceData = {
+        userId: currentUser.id,
+        notificationsEnabled: !!notificationsEnabled,
+        emailDigest: !!emailDigest,
+        digestFrequency: digestFrequency || "weekly",
+        theme: theme || "light",
+        categoryId: categoryId || null
+      };
+      
+      // Check if we have existing preferences for this user
+      const existingPreferences = await storage.getUserPreferences(currentUser.id);
+      
+      console.log("Existing preferences:", existingPreferences);
+      
+      // If this is a general preference (no categoryId) and we already have preferences,
+      // update the first one instead of creating a new one
+      if (!categoryId && existingPreferences.length > 0) {
+        const updatedPreference = await storage.updateUserPreference(
+          existingPreferences[0].id, 
+          preferenceData
+        );
+        return res.json({ success: true, preference: updatedPreference });
+      }
+      
+      // If it has a categoryId, check if we already have a preference for that category
+      if (categoryId) {
+        const existingCategoryPreference = await storage.getUserPreferencesByCategory(
           currentUser.id, 
-          preferenceData.categoryId
+          categoryId
         );
         
-        if (existingPreference) {
-          return res.status(400).json({ 
-            success: false, 
-            message: "Preference for this category already exists" 
-          });
+        if (existingCategoryPreference) {
+          const updatedPreference = await storage.updateUserPreference(
+            existingCategoryPreference.id, 
+            preferenceData
+          );
+          return res.json({ success: true, preference: updatedPreference });
         }
       }
       
-      // Create preference
-      const preference = await storage.createUserPreference(preferenceData);
-      res.status(201).json({ success: true, preference });
+      // Create new preference if no existing one was found
+      const newPreference = await storage.createUserPreference(preferenceData);
+      res.status(201).json({ success: true, preference: newPreference });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Invalid preference data", 
-          errors: error.errors 
-        });
-      }
-      res.status(500).json({ success: false, message: "Failed to create user preference" });
+      console.error("Error updating user preferences:", error);
+      res.status(500).json({ success: false, message: "Failed to update user preferences" });
     }
   });
   

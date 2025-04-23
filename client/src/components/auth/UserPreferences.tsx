@@ -20,18 +20,33 @@ export function UserPreferences() {
   });
 
   // Fetch user preferences
-  const { data: userPreferences } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['/api/user-preferences'],
-    enabled: !!user
+    enabled: !!user,
   });
+  
+  // Extract user preferences from the response data
+  const userPreferencesData = data?.preferences && data.preferences.length > 0 
+    ? data.preferences[0] 
+    : null;
 
   // Update preferences mutation
   const updatePreferences = useMutation({
     mutationFn: async (newPreferences: typeof preferences) => {
+      // If the user has selected specific categories, include categoryId
+      // For now, we're storing preferences as general settings (not category-specific)
+      const preferenceData = {
+        userId: user?.id,
+        notificationsEnabled: newPreferences.notificationsEnabled,
+        emailDigest: newPreferences.emailDigest,
+        digestFrequency: newPreferences.digestFrequency,
+        theme: newPreferences.theme
+      };
+      
       const response = await fetch('/api/user-preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newPreferences)
+        body: JSON.stringify(preferenceData)
       });
       return response.json();
     },
@@ -58,9 +73,15 @@ export function UserPreferences() {
   }, [userPreferences]);
 
   const handlePreferenceChange = (key: keyof typeof preferences, value: any) => {
+    // Update the local state first
     const newPreferences = { ...preferences, [key]: value };
     setPreferences(newPreferences);
+    
+    // Then send to server
     updatePreferences.mutate(newPreferences);
+    
+    // Log to ensure we're sending the right values
+    console.log(`Updating ${key} to ${value}`, newPreferences);
   };
 
   return (
