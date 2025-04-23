@@ -49,11 +49,7 @@ function Router() {
       <Route path="/contact" component={ContactPage}/>
       <Route path="/advertise" component={AdvertisePage}/>
       <Route path="/search" component={SearchPage}/>
-      <Route path="/preferences" component={() => (
-          <ProtectedRoute>
-            <UserPreferencesPage />
-          </ProtectedRoute>
-        )} /> {/* Added preferences route */}
+      <ProtectedRoute path="/preferences" component={UserPreferencesPage} /> {/* Protected preferences route */}
 
       {/* Admin routes */}
       <Route path="/admin/login" component={AdminLogin}/>
