@@ -41,13 +41,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isLoggedIn = true;
         currentUser = { ...user, password: undefined };
         
-        return res.json({ success: true });
+        // Return the authenticated flag and user object to match what the client expects
+        return res.json({ 
+          authenticated: true, 
+          success: true,
+          user: { ...user, password: undefined } 
+        });
       }
       
       // Invalid credentials
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
+      return res.status(401).json({ authenticated: false, success: false, message: "Invalid credentials" });
     } catch (error) {
-      return res.status(500).json({ success: false, message: "Internal server error" });
+      return res.status(500).json({ authenticated: false, success: false, message: "Internal server error" });
     }
   });
   
