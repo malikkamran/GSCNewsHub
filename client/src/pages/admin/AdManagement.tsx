@@ -143,7 +143,7 @@ export default function AdManagement() {
     error: placementsError,
   } = useQuery({
     queryKey: ['/api/ad-placements'],
-    select: (data) => data.placements,
+    select: (data: any) => data.placements,
   });
 
   // Fetch advertisements
@@ -153,7 +153,7 @@ export default function AdManagement() {
     error: advertisementsError,
   } = useQuery({
     queryKey: ['/api/advertisements'],
-    select: (data) => data.advertisements,
+    select: (data: any) => data.advertisements,
   });
 
   // Mutations for placements
@@ -362,7 +362,7 @@ export default function AdManagement() {
       endDate: ad.endDate ? new Date(ad.endDate).toISOString().split("T")[0] : "",
       active: ad.active,
       priority: ad.priority,
-      position: ad.position || "middle",
+      position: (ad.position || "middle") as "top" | "middle" | "bottom",
       sponsorName: ad.sponsorName || "",
       sponsorLogo: ad.sponsorLogo || "",
     });
@@ -381,11 +381,11 @@ export default function AdManagement() {
 
   // Get unique pages and sections for filtering
   const availablePages = adPlacements 
-    ? [...new Set(adPlacements.map((p: AdPlacement) => p.page))] 
+    ? Array.from(new Set(adPlacements.map((p: AdPlacement) => p.page))) 
     : [];
   
   const availableSections = selectedPage && adPlacements 
-    ? [...new Set(adPlacements.filter((p: AdPlacement) => p.page === selectedPage).map(p => p.section))]
+    ? Array.from(new Set(adPlacements.filter((p: AdPlacement) => p.page === selectedPage).map((p: AdPlacement) => p.section)))
     : [];
 
   // Filter placements based on selected page and section
