@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +9,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Redirect, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 
 // Login form schema
@@ -244,16 +244,20 @@ function RegisterForm() {
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState("login");
   const { user, isLoading } = useAuth();
+  const [, navigate] = useLocation();
   
-  // Redirect if user is already logged in
-  if (user && !isLoading) {
-    // If the user is an admin, redirect to admin dashboard
-    if (user.role === 'admin') {
-      return <Redirect to="/admin/dashboard" />;
+  // Redirect if user is already logged in (user came to this page directly)
+  useEffect(() => {
+    if (user && !isLoading) {
+      // If the user is an admin, redirect to admin dashboard
+      if (user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        // Otherwise redirect to homepage
+        navigate('/');
+      }
     }
-    // Otherwise redirect to homepage
-    return <Redirect to="/" />;
-  }
+  }, [user, isLoading, navigate]);
   
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
