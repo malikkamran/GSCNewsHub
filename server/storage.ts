@@ -9,6 +9,7 @@ import {
   adPlacements, type AdPlacement, type InsertAdPlacement,
   advertisements, type Advertisement, type InsertAdvertisement
 } from "@shared/schema";
+import { DatabaseStorage } from "./storage-db";
 
 export interface IStorage {
   // User operations
@@ -48,7 +49,12 @@ export interface IStorage {
   incrementArticleViews(id: number): Promise<Article | undefined>;
   
   // Search operations
-  searchArticles(query: string, limit?: number, offset?: number): Promise<{ articles: Article[], total: number }>;
+  searchArticles(
+    query: string,
+    limit?: number,
+    offset?: number,
+    useAI?: boolean,
+  ): Promise<{ articles: Article[]; total: number; enhancedQuery?: string; queryContext?: string }>;
 
   // Analyst operations
   getAnalysts(): Promise<Analyst[]>;
@@ -87,6 +93,18 @@ export interface IStorage {
   deleteAdvertisement(id: number): Promise<boolean>;
   incrementAdClick(id: number): Promise<Advertisement | undefined>;
   incrementAdView(id: number): Promise<Advertisement | undefined>;
+}
+
+export interface SeedSnapshot {
+  users: User[];
+  categories: Category[];
+  articles: Article[];
+  analysts: Analyst[];
+  analysis: Analysis[];
+  videos: Video[];
+  userPreferences: UserPreferences[];
+  adPlacements: AdPlacement[];
+  advertisements: Advertisement[];
 }
 
 export class MemStorage implements IStorage {
@@ -1391,6 +1409,22 @@ export class MemStorage implements IStorage {
       queryContext
     };
   }
+
+  getSeedSnapshot(): SeedSnapshot {
+    return {
+      users: Array.from(this.users.values()),
+      categories: Array.from(this.categories.values()),
+      articles: Array.from(this.articles.values()),
+      analysts: Array.from(this.analysts.values()),
+      analysis: Array.from(this.analysis.values()),
+      videos: Array.from(this.videos.values()),
+      userPreferences: Array.from(this.userPreferences.values()),
+      adPlacements: Array.from(this.adPlacements.values()),
+      advertisements: Array.from(this.advertisements.values()),
+    };
+  }
 }
 
-export const storage = new MemStorage();
+export const storage = process.env.DATABASE_URL
+  ? new DatabaseStorage()
+  : new MemStorage();
