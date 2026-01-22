@@ -85,7 +85,7 @@ export default function Header() {
               </DropdownMenu>
             ) : (
               <Link href="/auth">
-                <span className="text-white text-xs hover:underline cursor-pointer">Sign in / Register</span>
+                <span className="text-white text-xs hover:underline cursor-pointer">Sign in</span>
               </Link>
             )}
           </div>
@@ -291,7 +291,7 @@ export default function Header() {
               <li>
                 <Link href="/auth" onClick={() => toggleMobileMenu()}>
                   <span className="mobile-nav-link block py-2 border-b border-gray-700">
-                    Sign in / Register
+                    Sign in
                   </span>
                 </Link>
               </li>
