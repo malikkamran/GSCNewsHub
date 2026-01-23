@@ -185,6 +185,7 @@ export class MemStorage implements IStorage {
     const riskSecurityCategory = Array.from(this.categories.values()).find(c => c.slug === "risk-security");
     const ecommerceCategory = Array.from(this.categories.values()).find(c => c.slug === "e-commerce");
     const infrastructureCategory = Array.from(this.categories.values()).find(c => c.slug === "infrastructure");
+    const eventsConferencesCategory = Array.from(this.categories.values()).find(c => c.slug === "events-conferences");
     
     if (logisticsCategory && warehousingCategory && procurementCategory && manufacturingCategory && 
         techDigitalCategory && sustainabilityCategory && marketInsightsCategory && tradePolicyCategory && 
@@ -397,6 +398,74 @@ export class MemStorage implements IStorage {
         featured: false,
         publishedAt: new Date(Date.now() - 14 * 60 * 60 * 1000)
       });
+      
+      if (eventsConferencesCategory) {
+        this.createArticle({
+          title: "Top Logistics & Supply Chain Events to Watch in 2026",
+          slug: "top-logistics-supply-chain-events-2026",
+          summary: "Curated logistics events in early 2026 with design-rich HTML overview.",
+          content: `<!DOCTYPE html> 
+ <html lang="en"> 
+ <head> 
+     <meta charset="UTF-8"> 
+     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+     <title>Top Logistics Events to Watch - 2026</title> 
+     <style> 
+         :root { --primary-color: #0f3460; --accent-color: #e94560; --bg-color: #f4f7f6; --card-bg: #ffffff; --text-dark: #333333; --text-light: #666666; --border-radius: 8px; } 
+         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: var(--text-dark); background-color: var(--bg-color); margin: 0; padding: 0; } 
+         .container { max-width: 900px; margin: 40px auto; padding: 20px; } 
+         header { text-align: center; margin-bottom: 50px; } 
+         h1 { font-size: 2.5rem; color: var(--primary-color); margin-bottom: 10px; } 
+         .subtitle { font-size: 1.2rem; color: var(--text-light); } 
+         .month-header { display: flex; align-items: center; margin: 40px 0 20px 0; } 
+         .month-header h2 { background-color: var(--primary-color); color: white; padding: 8px 20px; border-radius: 50px; font-size: 1.1rem; margin-right: 15px; text-transform: uppercase; letter-spacing: 1px; } 
+         .month-line { flex-grow: 1; height: 2px; background-color: #ddd; } 
+         .event-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 25px; border-left: 5px solid var(--primary-color); transition: transform 0.2s ease; } 
+         .event-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); } 
+         .event-header { display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; } 
+         .event-title { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin: 0; } 
+         .event-meta { font-size: 0.95rem; color: var(--text-light); margin-top: 5px; display: flex; gap: 15px; align-items: center; } 
+         .icon { margin-right: 5px; } 
+         .event-desc { margin-bottom: 15px; } 
+         .why-attend { background-color: #eef2f5; padding: 15px; border-radius: 6px; font-size: 0.95rem; border-left: 3px solid var(--accent-color); } 
+         .why-attend strong { color: var(--accent-color); text-transform: uppercase; font-size: 0.85rem; display: block; margin-bottom: 5px; } 
+         .table-container { margin-top: 60px; overflow-x: auto; background: white; padding: 20px; border-radius: var(--border-radius); box-shadow: 0 4px 6px rgba(0,0,0,0.05); } 
+         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; } 
+         th { background-color: var(--primary-color); color: white; padding: 12px; text-align: left; } 
+         td { padding: 12px; border-bottom: 1px solid #eee; } 
+         tr:nth-child(even) { background-color: #f9f9f9; } 
+         @media (max-width: 600px) { .event-header { flex-direction: column; } .event-meta { flex-direction: column; align-items: flex-start; gap: 5px; } h1 { font-size: 1.8rem; } } 
+     </style> 
+ </head> 
+ <body> 
+ <div class="container"> 
+     <header> 
+         <h1>🌍 Top Logistics Events to Watch</h1> 
+         <div class="subtitle">Your guide to the key supply chain conferences in early 2026.</div> 
+     </header> 
+     <div class="month-header"><h2>February 2026</h2><div class="month-line"></div></div> 
+     <div class="event-card"><div class="event-header"><h3 class="event-title">LINK: The Retail Supply Chain Conference</h3><div class="event-meta"><span>📅 Feb 1 – 4</span><span>📍 Orlando, FL</span></div></div><div class="event-desc">Retail and consumer brand supply chain leaders gather to focus on distribution, fulfillment, logistics, analytics, and strategy.</div><div class="why-attend"><strong>Why Attend</strong>Use this event to benchmark retail network design and last-mile performance.</div></div> 
+     <div class="event-card"><div class="event-header"><h3 class="event-title">Manifest Vegas</h3><div class="event-meta"><span>📅 Feb 9 – 11</span><span>📍 Las Vegas, NV</span></div></div><div class="event-desc">A major cross-industry event that brings together shippers, LSPs, and logistics tech providers with heavy coverage of automation and digitization.</div><div class="why-attend"><strong>Why Attend</strong>Essential for discovering cutting-edge logistics technology and end-to-end visibility solutions.</div></div> 
+     <div class="event-card"><div class="event-header"><h3 class="event-title">transport logistic India</h3><div class="event-meta"><span>📅 Feb 25 – 27</span><span>📍 Mumbai, India</span></div></div><div class="event-desc">A large-scale trade fair spanning air, sea, rail, road, warehousing, and digital solutions.</div><div class="why-attend"><strong>Why Attend</strong>A strong pick if you track India's capacity buildout and multimodal infrastructure.</div></div> 
+     <div class="month-header"><h2>March 2026</h2><div class="month-line"></div></div> 
+     <div class="event-card"><div class="event-header"><h3 class="event-title">TPM26</h3><div class="event-meta"><span>📅 Mar 1 – 4</span><span>📍 Long Beach, CA</span></div></div><div class="event-desc">A flagship container shipping and supply chain conference with senior participation across carriers, shippers, and intermediaries.</div><div class="why-attend"><strong>Why Attend</strong>A key venue for contract cycle signals and ocean market sentiment.</div></div> 
+     <div class="event-card"><div class="event-header"><h3 class="event-title">LogiMAT</h3><div class="event-meta"><span>📅 Mar 24 – 26</span><span>📍 Stuttgart, Germany</span></div></div><div class="event-desc">Europe’s major intralogistics show, with deep coverage of warehouse automation, robotics, and material flow systems.</div><div class="why-attend"><strong>Why Attend</strong>Ideal for scanning new hardware and software for DC productivity gains.</div></div> 
+     <div class="event-card"><div class="event-header"><h3 class="event-title">LogiChem EU</h3><div class="event-meta"><span>📅 Mar 24 – 25</span><span>📍 Rotterdam, NL</span></div></div><div class="event-desc">A leading chemical supply chain event focused on compliance, resilience, sustainability, and risk across complex networks.</div><div class="why-attend"><strong>Why Attend</strong>A strong fit if you manage hazardous materials logistics or specialty chemicals planning.</div></div> 
+     <div class="event-card"><div class="event-header"><h3 class="event-title">SCOPE Leadership Summit</h3><div class="event-meta"><span>📅 Mar 29 – 31</span><span>📍 Phoenix, AZ</span></div></div><div class="event-desc">A senior leader summit built around peer connections and vendor meetings.</div><div class="why-attend"><strong>Why Attend</strong>Use it to compare approaches to procurement, planning, and supply chain transformation.</div></div> 
+     <div class="event-card"><div class="event-header"><h3 class="event-title">SITL</h3><div class="event-meta"><span>📅 Mar 31 – Apr 2</span><span>📍 Paris, France</span></div></div><div class="event-desc">A major European transport and logistics trade show with a broad mix of shippers, carriers, and solution providers.</div><div class="why-attend"><strong>Why Attend</strong>Good for scanning multimodal innovation and cold chain developments.</div></div> 
+     <div class="month-header"><h2>April 2026</h2><div class="month-line"></div></div> 
+     <div class="event-card"><div class="event-header"><h3 class="event-title">MODEX</h3><div class="event-meta"><span>📅 Apr 13 – 16</span><span>📍 Atlanta, GA</span></div></div><div class="event-desc">A top North American supply chain exhibition with hands-on demos, education sessions, and a wide exhibitor base.</div><div class="why-attend"><strong>Why Attend</strong>Prioritize this if you are actively buying automation, WMS, or fulfillment technology.</div></div> 
+     <div class="event-card"><div class="event-header"><h3 class="event-title">AAFA Global Conference</h3><div class="event-meta"><span>📅 Apr 14 – 15</span><span>📍 Baltimore, MD</span></div></div><div class="event-desc">A focused conference on global supply chain and trade topics with an industry and policy lens.</div><div class="why-attend"><strong>Why Attend</strong>Strong value if tariffs, customs, and trade compliance are on your 2026 risk list.</div></div> 
+     <div class="table-container"><h3 style="color: var(--primary-color); margin-top: 0;">📋 Quick Reference Calendar</h3><table><thead><tr><th>Event</th><th>Date</th><th>Location</th><th>Focus</th></tr></thead><tbody><tr><td>LINK</td><td>Feb 1–4</td><td>Orlando, FL</td><td>Retail Supply Chain</td></tr><tr><td>Manifest</td><td>Feb 9–11</td><td>Las Vegas, NV</td><td>Logistics Tech</td></tr><tr><td>TL India</td><td>Feb 25–27</td><td>Mumbai</td><td>Multimodal / India</td></tr><tr><td>TPM26</td><td>Mar 1–4</td><td>Long Beach, CA</td><td>Ocean / Contracts</td></tr><tr><td>LogiMAT</td><td>Mar 24–26</td><td>Stuttgart</td><td>Intralogistics</td></tr><tr><td>MODEX</td><td>Apr 13–16</td><td>Atlanta, GA</td><td>Automation</td></tr></tbody></table></div> 
+ </div> 
+ </body> 
+ </html>`,
+          imageUrl: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: eventsConferencesCategory.id,
+          featured: false,
+          publishedAt: new Date()
+        });
+      }
       
       // Create analysts
       this.createAnalyst({

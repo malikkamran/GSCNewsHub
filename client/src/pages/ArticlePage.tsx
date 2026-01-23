@@ -9,6 +9,7 @@ import MostRead from "@/components/sidebar/MostRead";
 import FeaturedVideo from "@/components/sidebar/FeaturedVideo";
 import ExpertAnalysis from "@/components/sidebar/ExpertAnalysis";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from "react";
 
 export default function ArticlePage() {
   const { slug } = useParams();
@@ -36,6 +37,38 @@ export default function ArticlePage() {
   const publishedDate = article?.publishedAt ? new Date(article.publishedAt) : null;
   const timeAgo = publishedDate ? formatDistanceToNow(publishedDate, { addSuffix: false }) : '';
   const formattedDate = publishedDate ? format(publishedDate, 'MMMM d, yyyy') : '';
+  const [htmlContent, setHtmlContent] = useState<string | null>(null);
+
+  useEffect(() => {
+    const key = `article-style-${slug || ''}`;
+    const existing = document.querySelectorAll(`style[data-article-style="${key}"]`);
+    existing.forEach((el) => el.parentElement?.removeChild(el));
+    if (!article?.content) {
+      setHtmlContent(null);
+      return;
+    }
+    const content = article.content.trim();
+    if (!content.startsWith('<')) {
+      setHtmlContent(null);
+      return;
+    }
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(content, 'text/html');
+    const styleTexts = Array.from(doc.head?.querySelectorAll('style') || []).map(s => s.textContent || '');
+    const css = styleTexts.join('\n').trim();
+    if (css.length > 0) {
+      const styleEl = document.createElement('style');
+      styleEl.setAttribute('data-article-style', key);
+      styleEl.textContent = css;
+      document.head.appendChild(styleEl);
+    }
+    const bodyHtml = doc.body?.innerHTML || content;
+    setHtmlContent(bodyHtml);
+    return () => {
+      const cleanup = document.querySelectorAll(`style[data-article-style="${key}"]`);
+      cleanup.forEach((el) => el.parentElement?.removeChild(el));
+    };
+  }, [article?.content, slug]);
   
   return (
     <>
@@ -103,9 +136,13 @@ export default function ArticlePage() {
                 </div>
                 
                 <div className="prose max-w-none">
-                  {article.content.split('\n\n').map((paragraph, index) => (
-                    <p key={index} className="mb-4">{paragraph}</p>
-                  ))}
+                  {htmlContent ? (
+                    <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+                  ) : (
+                    article.content.split('\n\n').map((paragraph, index) => (
+                      <p key={index} className="mb-4">{paragraph}</p>
+                    ))
+                  )}
                 </div>
                 
                 {/* In-article Ad */}
