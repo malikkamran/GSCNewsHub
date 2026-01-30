@@ -154,10 +154,11 @@ export default function Header() {
       </div>
       
       {/* Main Navigation - BBC style with white background */}
-      <div className="border-t border-[#BB1919] nav-menu">
+      <div className="border-t border-[#BB1919] nav-menu nav-sticky sticky top-0 z-[1100]">
         <div className="container mx-auto px-4">
-          <nav className="hidden md:block">
-            <ul className="flex flex-wrap text-gray-800" role="menubar">
+          <nav className="hidden md:block overflow-visible relative">
+            <div className="overflow-x-auto overflow-y-visible">
+              <ul className="flex flex-nowrap text-gray-800 whitespace-nowrap" role="menubar">
               <li role="none">
                 <Link href="/">
                   <span className={`nav-item inline-block ${location === '/' ? 'nav-item-active' : ''}`} role="menuitem">
@@ -200,7 +201,7 @@ export default function Header() {
                   </span>
                 </Link>
               </li>
-              <li role="none" className="nav-item inline-block">
+              <li role="none" className="inline-block">
                 <NavDropdown 
                   label="Industry Sectors" 
                   items={[
@@ -211,7 +212,7 @@ export default function Header() {
                   ]}
                 />
               </li>
-              <li role="none" className="nav-item inline-block">
+              <li role="none" className="inline-block">
                 <NavDropdown 
                   label="Risk & Policy" 
                   items={[
@@ -220,16 +221,30 @@ export default function Header() {
                   ]}
                 />
               </li>
-              <li role="none" className="nav-item inline-block">
+              <li role="none" className="inline-block">
                 <NavDropdown 
                   label="More" 
                   items={[
                     { label: "Innovation", slug: "innovation" },
                     { label: "Events & Conferences", slug: "events-conferences" }
                   ]}
+                  muted
                 />
               </li>
-            </ul>
+              <li role="none" className="inline-block">
+                <NavDropdown 
+                  label="Logistics Networks" 
+                  items={[
+                    { label: "All Networks", slug: "logistics-networks" },
+                    { label: "GLA (Global Logistics Alliance)", slug: "gla" },
+                    { label: "WCA World", slug: "wca-world" },
+                    { label: "JC Trans Networks", slug: "jc-trans-networks" }
+                  ]}
+                  muted
+                />
+              </li>
+              </ul>
+            </div>
           </nav>
         </div>
       </div>

@@ -36,8 +36,9 @@ export default function Home() {
             </div>
             
             {/* Category Sections */}
-            <CategorySection categorySlug="business" />
-            <CategorySection categorySlug="technology" />
+            <CategorySection categorySlug="logistics" />
+            <CategorySection categorySlug="tech-digital" />
+            <CategorySection categorySlug="market-insights" />
           </div>
           
           {/* Sidebar */}

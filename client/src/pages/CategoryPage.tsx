@@ -9,20 +9,49 @@ import MostRead from "@/components/sidebar/MostRead";
 import FeaturedVideo from "@/components/sidebar/FeaturedVideo";
 import ExpertAnalysis from "@/components/sidebar/ExpertAnalysis";
 import { Skeleton } from "@/components/ui/skeleton";
+import CompactArticleItem from "@/components/category/CompactArticleItem";
+import CategoryPagination from "@/components/category/CategoryPagination";
+import { useState, useMemo } from "react";
 
 export default function CategoryPage() {
   const { slug } = useParams();
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   
   const { data: categories } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
   });
   
   const category = categories?.find(c => c.slug === slug);
-  
+
   const { data: articles, isLoading } = useQuery<Article[]>({
-    queryKey: category ? [`/api/articles/category/${category.id}`, '10'] : null,
+    queryKey: category ? [`/api/articles/category/${category.id}`, page, pageSize] : [],
     enabled: !!category,
+    queryFn: async () => {
+      const res = await fetch(`/api/articles/category/${category!.id}?limit=${pageSize}&offset=${(page - 1) * pageSize}`);
+      if (!res.ok) throw new Error("Failed to load articles");
+      return res.json();
+    },
+    keepPreviousData: true,
   });
+
+  const { data: countData } = useQuery<{ total: number }>({
+    queryKey: category ? [`/api/articles/category/${category.id}/count`] : [],
+    enabled: !!category,
+    queryFn: async () => {
+      const res = await fetch(`/api/articles/category/${category!.id}/count`);
+      if (!res.ok) throw new Error("Failed to load article count");
+      return res.json();
+    },
+  });
+
+  const totalItems = countData?.total ?? 0;
+
+  const [featuredArticle, restArticles] = useMemo(() => {
+    if (!articles || articles.length === 0) return [null, [] as Article[]];
+    const [first, ...rest] = articles;
+    return [first, rest];
+  }, [articles]);
   
   // Generate breadcrumb items
   const breadcrumbItems = [
@@ -35,6 +64,13 @@ export default function CategoryPage() {
       <Helmet>
         <title>{category?.name || "Category"} - GSC Supply Chain News</title>
         <meta name="description" content={`Latest ${category?.name || "category"} news and updates from GSC Supply Chain News.`} />
+        {slug === "logistics-networks" && (
+          <>
+            <meta name="keywords" content="logistics networks, freight forwarder alliances, GLA, WCA World, JC Trans, global coverage, compliance" />
+            <meta property="og:title" content="Logistics Networks - GSC Supply Chain News" />
+            <meta property="og:description" content="Explore logistics alliances, member services, and recent updates across global networks." />
+          </>
+        )}
       </Helmet>
       
       
@@ -71,19 +107,40 @@ export default function CategoryPage() {
               <div className="text-center py-8">
                 <p>Category not found.</p>
               </div>
-            ) : articles && articles.length > 0 ? (
-              <div className="space-y-8">
-                {articles.map(article => (
-                  <ArticleCard 
-                    key={article.id} 
-                    article={article} 
+            ) : (articles && articles.length > 0 && category) ? (
+              <>
+                {featuredArticle && (
+                  <ArticleCard
+                    article={featuredArticle}
                     category={category}
                     size="large"
                     showCategory={true}
                     showSummary={true}
                   />
-                ))}
-              </div>
+                )}
+                {restArticles.length > 0 && (
+                  <section
+                    aria-label={`${category.name} articles`}
+                    className="mt-6 grid gap-4 md:grid-cols-2"
+                  >
+                    {restArticles.map((article: Article) => (
+                      <CompactArticleItem
+                        key={article.id}
+                        article={article}
+                        category={category}
+                      />
+                    ))}
+                  </section>
+                )}
+                {totalItems > pageSize && (
+                  <CategoryPagination
+                    currentPage={page}
+                    totalItems={totalItems}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                  />
+                )}
+              </>
             ) : (
               <div className="text-center py-8">
                 <p>No articles available in this category.</p>

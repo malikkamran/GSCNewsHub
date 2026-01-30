@@ -10,6 +10,7 @@ import FeaturedVideo from "@/components/sidebar/FeaturedVideo";
 import ExpertAnalysis from "@/components/sidebar/ExpertAnalysis";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
+import { optimizeImageUrl } from "@/lib/image";
 
 export default function ArticlePage() {
   const { slug } = useParams();
@@ -124,9 +125,12 @@ export default function ArticlePage() {
                 
                 <div className="relative aspect-video mb-6">
                   <img 
-                    src={article.imageUrl} 
+                    src={optimizeImageUrl(article.imageUrl, 1200, 80)} 
                     alt={article.title} 
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "/assets/article-placeholder.svg";
+                    }}
                   />
                   {category && (
                     <div className="category-tag">

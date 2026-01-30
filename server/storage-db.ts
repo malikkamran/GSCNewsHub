@@ -10,6 +10,8 @@ import {
   userPreferences,
   adPlacements,
   advertisements,
+  networks,
+  contents,
   type User,
   type InsertUser,
   type Category,
@@ -28,6 +30,10 @@ import {
   type InsertAdPlacement,
   type Advertisement,
   type InsertAdvertisement,
+  type Network,
+  type InsertNetwork,
+  type Content,
+  type InsertContent,
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
@@ -65,6 +71,35 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: number): Promise<boolean> {
     const result = await this.db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
+    return result.length > 0;
+  }
+  
+  async getNetworks(): Promise<Network[]> {
+    return this.db.select().from(networks).orderBy(asc(networks.name));
+  }
+  
+  async getNetwork(id: number): Promise<Network | undefined> {
+    const result = await this.db.select().from(networks).where(eq(networks.id, id)).limit(1);
+    return result[0];
+  }
+  
+  async getNetworkBySlug(slug: string): Promise<Network | undefined> {
+    const result = await this.db.select().from(networks).where(eq(networks.slug, slug)).limit(1);
+    return result[0];
+  }
+  
+  async createNetwork(networkData: InsertNetwork): Promise<Network> {
+    const result = await this.db.insert(networks).values(networkData).returning();
+    return result[0];
+  }
+  
+  async updateNetwork(id: number, networkData: Partial<InsertNetwork>): Promise<Network | undefined> {
+    const result = await this.db.update(networks).set(networkData).where(eq(networks.id, id)).returning();
+    return result[0];
+  }
+  
+  async deleteNetwork(id: number): Promise<boolean> {
+    const result = await this.db.delete(networks).where(eq(networks.id, id)).returning({ id: networks.id });
     return result.length > 0;
   }
 
@@ -124,6 +159,14 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db.delete(categories).where(eq(categories.id, id)).returning({ id: categories.id });
     return result.length > 0;
   }
+  
+  async getCategoriesByNetwork(networkId: number): Promise<Category[]> {
+    return this.db.select().from(categories).where(eq(categories.networkId, networkId)).orderBy(asc(categories.order));
+  }
+  
+  async getChildCategories(parentId: number): Promise<Category[]> {
+    return this.db.select().from(categories).where(eq(categories.parentId, parentId)).orderBy(asc(categories.order));
+  }
 
   async getArticles(limit: number = 10, offset: number = 0, status?: string): Promise<Article[]> {
     const conditions = status ? eq(articles.status, status) : undefined;
@@ -142,6 +185,12 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(articles.publishedAt))
       .limit(limit)
       .offset(offset);
+  }
+  
+  async getArticleCountByCategory(categoryId: number, status?: string): Promise<number> {
+    const conditions = status ? and(eq(articles.categoryId, categoryId), eq(articles.status, status)) : eq(articles.categoryId, categoryId);
+    const result = await this.db.select({ count: sql<number>`count(*)` }).from(articles).where(conditions);
+    return result[0]?.count ?? 0;
   }
 
   async getArticleBySlug(slug: string): Promise<Article | undefined> {
@@ -205,6 +254,42 @@ export class DatabaseStorage implements IStorage {
       .where(eq(articles.id, id))
       .returning();
     return result[0];
+  }
+  
+  async getContentsByNetwork(networkId: number, limit: number = 10, offset: number = 0): Promise<Content[]> {
+    return this.db.select().from(contents)
+      .where(eq(contents.networkId, networkId))
+      .orderBy(desc(contents.updatedAt))
+      .limit(limit)
+      .offset(offset);
+  }
+  
+  async getContentsByCategory(categoryId: number, limit: number = 10, offset: number = 0): Promise<Content[]> {
+    return this.db.select().from(contents)
+      .where(eq(contents.categoryId, categoryId))
+      .orderBy(desc(contents.updatedAt))
+      .limit(limit)
+      .offset(offset);
+  }
+  
+  async getContent(id: number): Promise<Content | undefined> {
+    const result = await this.db.select().from(contents).where(eq(contents.id, id)).limit(1);
+    return result[0];
+  }
+  
+  async createContent(contentData: InsertContent): Promise<Content> {
+    const result = await this.db.insert(contents).values(contentData).returning();
+    return result[0];
+  }
+  
+  async updateContent(id: number, contentData: Partial<InsertContent>): Promise<Content | undefined> {
+    const result = await this.db.update(contents).set(contentData).where(eq(contents.id, id)).returning();
+    return result[0];
+  }
+  
+  async deleteContent(id: number): Promise<boolean> {
+    const result = await this.db.delete(contents).where(eq(contents.id, id)).returning({ id: contents.id });
+    return result.length > 0;
   }
 
   async searchArticles(

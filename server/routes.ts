@@ -11,7 +11,9 @@ import {
   insertVideoSchema, 
   insertUserPreferencesSchema,
   insertAdPlacementSchema,
-  insertAdvertisementSchema
+  insertAdvertisementSchema,
+  insertNetworkSchema,
+  insertContentSchema
 } from "@shared/schema";
 
 // Authentication state
@@ -24,6 +26,14 @@ const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
     return next();
   }
   return res.status(401).json({ authenticated: false, message: "Unauthorized" });
+};
+const requireRole = (role: string) => (req: Request, res: Response, next: NextFunction) => {
+  if (currentUser && currentUser.role === role) return next();
+  return res.status(403).json({ success: false, message: "Forbidden" });
+};
+const requireNetworkAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (currentUser && currentUser.role === "network_admin" && currentUser.networkId) return next();
+  return res.status(403).json({ success: false, message: "Forbidden" });
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -282,6 +292,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // prefix all routes with /api
   const apiRouter = app.route('/api');
   
+  app.get('/api/menu', async (_req, res) => {
+    try {
+      const nets = await storage.getNetworks();
+      const menu = await Promise.all(nets.map(async (net) => {
+        const firstLevel = (await storage.getCategoriesByNetwork(net.id)).filter(c => (c.level || 1) === 1).sort((a, b) => (a.order || 0) - (b.order || 0));
+        const items = await Promise.all(firstLevel.map(async (cat) => {
+          const children = (await storage.getChildCategories(cat.id)).sort((a, b) => (a.order || 0) - (b.order || 0));
+          return { id: cat.id, name: cat.name, slug: cat.slug, children };
+        }));
+        return { network: { id: net.id, name: net.name, slug: net.slug }, items };
+      }));
+      res.json({ menu });
+    } catch {
+      res.status(500).json({ message: 'Failed to build menu' });
+    }
+  });
+  
+  app.get('/api/networks', isAuthenticated, requireRole('admin'), async (_req, res) => {
+    const nets = await storage.getNetworks();
+    res.json(nets);
+  });
+  app.post('/api/networks', isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const data = insertNetworkSchema.parse(req.body);
+      const net = await storage.createNetwork(data);
+      res.status(201).json(net);
+    } catch (error) {
+      if (error instanceof z.ZodError) return res.status(400).json({ message: 'Invalid network data', errors: error.errors });
+      res.status(500).json({ message: 'Failed to create network' });
+    }
+  });
+  app.put('/api/networks/:id', isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updated = await storage.updateNetwork(id, req.body);
+      if (!updated) return res.status(404).json({ message: 'Network not found' });
+      res.json(updated);
+    } catch {
+      res.status(500).json({ message: 'Failed to update network' });
+    }
+  });
+  app.delete('/api/networks/:id', isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const ok = await storage.deleteNetwork(id);
+      if (!ok) return res.status(404).json({ message: 'Network not found' });
+      res.json({ success: true });
+    } catch {
+      res.status(500).json({ message: 'Failed to delete network' });
+    }
+  });
+  
+  app.post('/api/categories/first-level', isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const { name, slug, networkId, order } = req.body;
+      if (!name || !slug || !networkId) return res.status(400).json({ message: 'Missing fields' });
+      const cat = await storage.createCategory({ name, slug, parentId: null, networkId, level: 1, order: order || 0 });
+      res.status(201).json(cat);
+    } catch {
+      res.status(500).json({ message: 'Failed to create category' });
+    }
+  });
+  
+  app.post('/api/categories/second-level', isAuthenticated, requireNetworkAdmin, async (req, res) => {
+    try {
+      const { name, slug, parentId, order } = req.body;
+      if (!name || !slug || !parentId) return res.status(400).json({ message: 'Missing fields' });
+      const parent = await storage.getCategory(parentId);
+      if (!parent) return res.status(404).json({ message: 'Parent category not found' });
+      if (parent.networkId !== currentUser.networkId) return res.status(403).json({ message: 'Forbidden' });
+      const cat = await storage.createCategory({ name, slug, parentId, networkId: currentUser.networkId, level: 2, order: order || 0 });
+      res.status(201).json(cat);
+    } catch {
+      res.status(500).json({ message: 'Failed to create subcategory' });
+    }
+  });
+  
+  app.put('/api/categories/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const existing = await storage.getCategory(id);
+      if (!existing) return res.status(404).json({ message: 'Category not found' });
+      if ((existing.level || 1) === 1) {
+        if (!currentUser || currentUser.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+      } else {
+        if (!currentUser || currentUser.role !== 'network_admin' || currentUser.networkId !== existing.networkId) return res.status(403).json({ message: 'Forbidden' });
+      }
+      const updated = await storage.updateCategory(id, { ...existing, ...req.body });
+      res.json(updated);
+    } catch {
+      res.status(500).json({ message: 'Failed to update category' });
+    }
+  });
+  
+  app.post('/api/contents', isAuthenticated, requireNetworkAdmin, async (req, res) => {
+    try {
+      const parsed = insertContentSchema.parse({ ...req.body, networkId: currentUser.networkId });
+      const c = await storage.createContent(parsed);
+      res.status(201).json(c);
+    } catch (error) {
+      if (error instanceof z.ZodError) return res.status(400).json({ message: 'Invalid content data', errors: error.errors });
+      res.status(500).json({ message: 'Failed to create content' });
+    }
+  });
+  app.get('/api/contents/network/:slug', async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const net = await storage.getNetworkBySlug(slug);
+      if (!net) return res.status(404).json({ message: 'Network not found' });
+      const items = await storage.getContentsByNetwork(net.id, 50, 0);
+      res.json(items);
+    } catch {
+      res.status(500).json({ message: 'Failed to fetch contents' });
+    }
+  });
+  app.get('/api/contents/:id', async (req, res) => {
+    const id = parseInt(req.params.id);
+    const c = await storage.getContent(id);
+    if (!c) return res.status(404).json({ message: 'Content not found' });
+    res.json(c);
+  });
+  app.put('/api/contents/:id', isAuthenticated, requireNetworkAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const c = await storage.getContent(id);
+      if (!c) return res.status(404).json({ message: 'Content not found' });
+      if (c.networkId !== currentUser.networkId) return res.status(403).json({ message: 'Forbidden' });
+      const updated = await storage.updateContent(id, req.body);
+      res.json(updated);
+    } catch {
+      res.status(500).json({ message: 'Failed to update content' });
+    }
+  });
+  app.delete('/api/contents/:id', isAuthenticated, requireNetworkAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const c = await storage.getContent(id);
+      if (!c) return res.status(404).json({ message: 'Content not found' });
+      if (c.networkId !== currentUser.networkId) return res.status(403).json({ message: 'Forbidden' });
+      const ok = await storage.deleteContent(id);
+      res.json({ success: ok });
+    } catch {
+      res.status(500).json({ message: 'Failed to delete content' });
+    }
+  });
+  
   // Categories endpoints
   app.get('/api/categories', async (req, res) => {
     try {
@@ -377,6 +533,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(articles);
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch articles by category' });
+    }
+  });
+
+  app.get('/api/articles/category/:categoryId/count', async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.categoryId);
+      const total = await storage.getArticleCountByCategory(categoryId, 'published');
+      res.json({ total });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch article count by category' });
     }
   });
 
@@ -980,13 +1146,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ success: false, message: 'Invalid placement ID' });
       }
 
-      const advertisement = await storage.getActiveAdvertisementForPlacement(placementId);
+      const excludeIdParam = req.query.exclude;
+      const excludeId = typeof excludeIdParam === 'string' ? parseInt(excludeIdParam) : undefined;
+      const advertisement = await storage.getActiveAdvertisementForPlacement(placementId, excludeId);
       if (!advertisement) {
         return res.status(404).json({ success: false, message: 'No active advertisement found for this placement' });
       }
-
-      // Track view
-      await storage.incrementAdView(advertisement.id);
 
       res.json({ success: true, advertisement });
     } catch (error) {
@@ -1085,6 +1250,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Failed to track advertisement click' });
+    }
+  });
+
+  app.post('/api/advertisements/:id/view', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ success: false, message: 'Invalid advertisement ID' });
+      }
+
+      const advertisement = await storage.incrementAdView(id);
+      if (!advertisement) {
+        return res.status(404).json({ success: false, message: 'Advertisement not found' });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to track advertisement view' });
     }
   });
 

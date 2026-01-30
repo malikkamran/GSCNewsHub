@@ -20,6 +20,9 @@ import AuthPage from "@/pages/auth-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import UserPreferencesPage from "./pages/UserPreferencesPage";
+import NetworkGLA from "@/pages/networks/GLA";
+import NetworkWCAWorld from "@/pages/networks/WCAWorld";
+import NetworkJCTrans from "@/pages/networks/JCTrans";
 
 // Admin pages
 import AdminLogin from "@/pages/admin/Login";
@@ -39,6 +42,10 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path="/" component={Home}/>
+      {/* Custom network pages (override generic category route) */}
+      <Route path="/category/gla" component={NetworkGLA}/>
+      <Route path="/category/wca-world" component={NetworkWCAWorld}/>
+      <Route path="/category/jc-trans-networks" component={NetworkJCTrans}/>
       <Route path="/category/:slug" component={CategoryPage}/>
       <Route path="/article/:slug" component={ArticlePage}/>
       <Route path="/auth" component={AuthPage}/>

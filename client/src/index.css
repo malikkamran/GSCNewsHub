@@ -20,12 +20,13 @@
 }
 
 .nav-item {
-  padding: 0.65rem 1rem;
+  padding: 0.55rem 0.8rem;
   font-weight: 500; /* Semi-bold */
   font-size: 0.8125rem; /* 13px - BBC News nav size */
   transition: background-color 0.2s ease;
   font-family: Helvetica, Arial, sans-serif;
   letter-spacing: 0.01em;
+  line-height: 1.2;
 }
 
 .nav-item:hover {
@@ -33,15 +34,30 @@
 }
 
 .nav-item-active {
-  background-color: #BB1919;
-  color: white;
-  border-radius: 4px;
-  font-weight: 500;
+  background-color: transparent;
+  color: #BB1919;
+  border-bottom: 3px solid #BB1919;
+  font-weight: 600;
 }
 
 .nav-item-active:hover {
-  background-color: #A00000;
-  color: white;
+  background-color: transparent;
+  color: #A00000;
+}
+
+/* Sticky nav shadow */
+.nav-sticky {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Muted labels for meta/organizational dropdowns */
+.nav-item-muted {
+  color: #666666;
+  opacity: 0.95;
+}
+.nav-item-muted:hover {
+  color: #BB1919;
+  opacity: 1;
 }
 
 @layer base {

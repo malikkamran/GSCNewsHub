@@ -10,7 +10,8 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   firstName: text("first_name"),
   lastName: text("last_name"),
-  role: text("role").default("user").notNull(), // 'user', 'admin', 'editor'
+  role: text("role").default("user").notNull(),
+  networkId: integer("network_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   lastLogin: timestamp("last_login"),
 });
@@ -22,21 +23,46 @@ export const insertUserSchema = createInsertSchema(users).pick({
   firstName: true,
   lastName: true,
   role: true,
+  networkId: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// Networks table
+export const networks = pgTable("networks", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  logoUrl: text("logo_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertNetworkSchema = createInsertSchema(networks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertNetwork = z.infer<typeof insertNetworkSchema>;
+export type Network = typeof networks.$inferSelect;
 
 // Categories table
 export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   slug: text("slug").notNull().unique(),
+  parentId: integer("parent_id"),
+  networkId: integer("network_id"),
+  level: integer("level").default(1),
+  order: integer("order_index").default(0),
 });
 
-export const insertCategorySchema = createInsertSchema(categories).pick({
-  name: true,
-  slug: true,
+export const insertCategorySchema = createInsertSchema(categories).omit({
+  id: true,
+}).extend({
+  name: z.string(),
+  slug: z.string(),
 });
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
@@ -65,6 +91,31 @@ export const insertArticleSchema = createInsertSchema(articles).omit({
 
 export type InsertArticle = z.infer<typeof insertArticleSchema>;
 export type Article = typeof articles.$inferSelect;
+
+// Generic content table for network pages
+export const contents = pgTable("contents", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  body: text("body"),
+  type: text("type").notNull(),
+  imageUrl: text("image_url"),
+  mediaUrl: text("media_url"),
+  networkId: integer("network_id"),
+  categoryId: integer("category_id"),
+  status: text("status").default("published"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertContentSchema = createInsertSchema(contents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertContent = z.infer<typeof insertContentSchema>;
+export type Content = typeof contents.$inferSelect;
 
 // Analysts table
 export const analysts = pgTable("analysts", {

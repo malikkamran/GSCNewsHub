@@ -7,7 +7,9 @@ import {
   videos, type Video, type InsertVideo,
   userPreferences, type UserPreferences, type InsertUserPreferences,
   adPlacements, type AdPlacement, type InsertAdPlacement,
-  advertisements, type Advertisement, type InsertAdvertisement
+  advertisements, type Advertisement, type InsertAdvertisement,
+  networks, type Network, type InsertNetwork,
+  contents, type Content, type InsertContent
 } from "@shared/schema";
 import { DatabaseStorage } from "./storage-db";
 
@@ -20,6 +22,14 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
+  
+  // Network operations
+  getNetworks(): Promise<Network[]>;
+  getNetwork(id: number): Promise<Network | undefined>;
+  getNetworkBySlug(slug: string): Promise<Network | undefined>;
+  createNetwork(network: InsertNetwork): Promise<Network>;
+  updateNetwork(id: number, network: Partial<InsertNetwork>): Promise<Network | undefined>;
+  deleteNetwork(id: number): Promise<boolean>;
   
   // User Preferences operations
   getUserPreferences(userId: number): Promise<UserPreferences[]>;
@@ -35,10 +45,13 @@ export interface IStorage {
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: number, category: InsertCategory): Promise<Category | undefined>;
   deleteCategory(id: number): Promise<boolean>;
+  getCategoriesByNetwork(networkId: number): Promise<Category[]>;
+  getChildCategories(parentId: number): Promise<Category[]>;
 
   // Article operations
   getArticles(limit?: number, offset?: number, status?: string): Promise<Article[]>;
   getArticlesByCategory(categoryId: number, limit?: number, offset?: number): Promise<Article[]>;
+  getArticleCountByCategory(categoryId: number, status?: string): Promise<number>;
   getArticleBySlug(slug: string): Promise<Article | undefined>;
   getArticle(id: number): Promise<Article | undefined>;
   getFeaturedArticles(limit?: number): Promise<Article[]>;
@@ -47,6 +60,14 @@ export interface IStorage {
   updateArticle(id: number, article: InsertArticle): Promise<Article | undefined>;
   deleteArticle(id: number): Promise<boolean>;
   incrementArticleViews(id: number): Promise<Article | undefined>;
+  
+  // Content operations
+  getContentsByNetwork(networkId: number, limit?: number, offset?: number): Promise<Content[]>;
+  getContentsByCategory(categoryId: number, limit?: number, offset?: number): Promise<Content[]>;
+  getContent(id: number): Promise<Content | undefined>;
+  createContent(content: InsertContent): Promise<Content>;
+  updateContent(id: number, content: Partial<InsertContent>): Promise<Content | undefined>;
+  deleteContent(id: number): Promise<boolean>;
   
   // Search operations
   searchArticles(
@@ -109,8 +130,10 @@ export interface SeedSnapshot {
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
+  private networks: Map<number, Network>;
   private categories: Map<number, Category>;
   private articles: Map<number, Article>;
+  private contents: Map<number, Content>;
   private analysts: Map<number, Analyst>;
   private analysis: Map<number, Analysis>;
   private videos: Map<number, Video>;
@@ -119,8 +142,10 @@ export class MemStorage implements IStorage {
   private advertisements: Map<number, Advertisement>;
   
   private userId: number = 1;
+  private networkId: number = 1;
   private categoryId: number = 1;
   private articleId: number = 1;
+  private contentId: number = 1;
   private analystId: number = 1;
   private analysisId: number = 1;
   private videoId: number = 1;
@@ -130,8 +155,10 @@ export class MemStorage implements IStorage {
 
   constructor() {
     this.users = new Map();
+    this.networks = new Map();
     this.categories = new Map();
     this.articles = new Map();
+    this.contents = new Map();
     this.analysts = new Map();
     this.analysis = new Map();
     this.videos = new Map();
@@ -168,7 +195,11 @@ export class MemStorage implements IStorage {
       { name: "Cold Chain", slug: "cold-chain" },
       { name: "Events & Conferences", slug: "events-conferences" },
       { name: "Company Profiles", slug: "company-profiles" },
-      { name: "Innovation", slug: "innovation" }
+      { name: "Innovation", slug: "innovation" },
+      { name: "Logistics Networks", slug: "logistics-networks" },
+      { name: "GLA (Global Logistics Alliance)", slug: "gla" },
+      { name: "WCA World", slug: "wca-world" },
+      { name: "JC Trans Networks", slug: "jc-trans-networks" }
     ];
     
     categoryData.forEach(category => this.createCategory(category));
@@ -186,6 +217,26 @@ export class MemStorage implements IStorage {
     const ecommerceCategory = Array.from(this.categories.values()).find(c => c.slug === "e-commerce");
     const infrastructureCategory = Array.from(this.categories.values()).find(c => c.slug === "infrastructure");
     const eventsConferencesCategory = Array.from(this.categories.values()).find(c => c.slug === "events-conferences");
+    const logisticsNetworksCategory = Array.from(this.categories.values()).find(c => c.slug === "logistics-networks");
+    const glaCategory = Array.from(this.categories.values()).find(c => c.slug === "gla");
+    const wcaCategory = Array.from(this.categories.values()).find(c => c.slug === "wca-world");
+    const jcTransCategory = Array.from(this.categories.values()).find(c => c.slug === "jc-trans-networks");
+    
+    const glaNetId = this.networkId++;
+    const wcaNetId = this.networkId++;
+    const jcNetId = this.networkId++;
+    this.networks.set(glaNetId, { id: glaNetId, name: "GLA (Global Logistics Alliance)", slug: "gla", description: null, logoUrl: null, createdAt: new Date() } as Network);
+    this.networks.set(wcaNetId, { id: wcaNetId, name: "WCA World", slug: "wca-world", description: null, logoUrl: null, createdAt: new Date() } as Network);
+    this.networks.set(jcNetId, { id: jcNetId, name: "JC Trans Networks", slug: "jc-trans-networks", description: null, logoUrl: null, createdAt: new Date() } as Network);
+    if (glaCategory) {
+      this.updateCategory(glaCategory.id, { name: glaCategory.name, slug: glaCategory.slug, parentId: null, networkId: glaNetId, level: 1, order: 0 });
+    }
+    if (wcaCategory) {
+      this.updateCategory(wcaCategory.id, { name: wcaCategory.name, slug: wcaCategory.slug, parentId: null, networkId: wcaNetId, level: 1, order: 0 });
+    }
+    if (jcTransCategory) {
+      this.updateCategory(jcTransCategory.id, { name: jcTransCategory.name, slug: jcTransCategory.slug, parentId: null, networkId: jcNetId, level: 1, order: 0 });
+    }
     
     if (logisticsCategory && warehousingCategory && procurementCategory && manufacturingCategory && 
         techDigitalCategory && sustainabilityCategory && marketInsightsCategory && tradePolicyCategory && 
@@ -362,6 +413,152 @@ export class MemStorage implements IStorage {
         featured: false,
         publishedAt: new Date(Date.now() - 8 * 60 * 60 * 1000)
       });
+      
+      // LOGISTICS NETWORKS CATEGORY OVERVIEW
+      if (logisticsNetworksCategory) {
+        this.createArticle({
+          title: "Global Logistics Networks: How Alliances Drive Reach and Reliability",
+          slug: "global-logistics-networks-overview",
+          summary: "Why logistics alliances matter for coverage, compliance, and service quality.",
+          content: "Logistics networks aggregate vetted forwarders and service providers under shared standards, enabling global reach with local expertise. Alliances support cross-border compliance, consistent service levels, and collaborative procurement while preserving independent ownership.",
+          imageUrl: "https://images.unsplash.com/photo-1556909211-3693eeb31f66?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: logisticsNetworksCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 1 * 60 * 60 * 1000)
+        });
+      }
+      
+      // GLA NETWORK NEWS
+      if (glaCategory) {
+        this.createArticle({
+          title: "GLA Expands Asia–Europe Freight Corridors",
+          slug: "gla-expands-asia-europe-corridors",
+          summary: "New partnerships strengthen multimodal routes and customs brokerage coverage.",
+          content: "GLA announced expanded corridor capacity connecting key gateways in China, Central Asia, and Eastern Europe, with integrated brokerage and visibility tools to reduce transit uncertainty.",
+          imageUrl: "https://images.unsplash.com/photo-1519750783826-e2420f4d687f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: glaCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 5 * 60 * 60 * 1000)
+        });
+        this.createArticle({
+          title: "GLA Members Roll Out Digital POD Across Network",
+          slug: "gla-digital-pod-rollout",
+          summary: "Standardized electronic proof-of-delivery improves billing cycle times.",
+          content: "A coordinated rollout of digital POD and unified milestones aligns documentation and accelerates invoice cycles, with API access for enterprise systems.",
+          imageUrl: "https://images.unsplash.com/photo-1581093373443-5c00f0c2156f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: glaCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 26 * 60 * 60 * 1000)
+        });
+        this.createArticle({
+          title: "GLA Annual Conference Announces Innovation Awards",
+          slug: "gla-annual-conference-innovation-awards",
+          summary: "Recognition for automation, sustainability, and customer service excellence.",
+          content: "Finalists highlight robotics-enabled warehousing, green corridors, and self-service portals improving shipper experiences.",
+          imageUrl: "https://images.unsplash.com/photo-1526498462968-8d52f3f0c1b4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: glaCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 40 * 60 * 60 * 1000)
+        });
+        this.createArticle({
+          title: "GLA Adds Compliance Desk for Dangerous Goods",
+          slug: "gla-dangerous-goods-compliance-desk",
+          summary: "Central advisory team supports DG bookings across modes.",
+          content: "Members gain access to pre-shipment checks, SDS verification, and documentation templates, reducing exception risks.",
+          imageUrl: "https://images.unsplash.com/photo-1542326237-94b1c5a53a5d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: glaCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 70 * 60 * 60 * 1000)
+        });
+      }
+      
+      // WCA WORLD NEWS
+      if (wcaCategory) {
+        this.createArticle({
+          title: "WCA World Launches Ocean Carbon Reporting Toolkit",
+          slug: "wca-world-ocean-carbon-toolkit",
+          summary: "New toolkit standardizes CO2 calculations and helps shippers meet reporting mandates.",
+          content: "The toolkit consolidates carrier data, voyage legs, and emissions factors to produce auditable statements for sustainability reporting.",
+          imageUrl: "https://images.unsplash.com/photo-1505761671935-60b3a7427bad?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: wcaCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 9 * 60 * 60 * 1000)
+        });
+        this.createArticle({
+          title: "WCA Members Integrate eBookings via Unified API",
+          slug: "wca-members-integrate-ebookings-api",
+          summary: "Unified booking API improves data quality and visibility.",
+          content: "The common API reduces duplicate entry, aligns milestones, and enables predictive ETAs across origins and destinations.",
+          imageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: wcaCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 32 * 60 * 60 * 1000)
+        });
+        this.createArticle({
+          title: "WCA World Adds Pharma Logistics Certification Track",
+          slug: "wca-world-pharma-logistics-certification",
+          summary: "New training supports GDP compliance and cold chain best practices.",
+          content: "The track covers lane risk assessment, thermal packaging selection, and excursion monitoring for temperature-sensitive cargo.",
+          imageUrl: "https://images.unsplash.com/photo-1516542076529-1ea3854896e1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: wcaCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 55 * 60 * 60 * 1000)
+        });
+        this.createArticle({
+          title: "WCA World Strengthens Africa Regional Chapters",
+          slug: "wca-world-strengthens-africa-chapters",
+          summary: "Regional leadership appointments and hub development initiatives.",
+          content: "Focus areas include customs modernization, multimodal development, and digitization for trade facilitation.",
+          imageUrl: "https://images.unsplash.com/photo-1518459031867-a89b944bffe5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: wcaCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 80 * 60 * 60 * 1000)
+        });
+      }
+      
+      // JC TRANS NETWORKS NEWS
+      if (jcTransCategory) {
+        this.createArticle({
+          title: "JC Trans Expands Cross-Border E‑commerce Fulfillment",
+          slug: "jc-trans-expands-cross-border-fulfillment",
+          summary: "New bonded facilities and last‑mile integrations for faster delivery.",
+          content: "Investments target customs clearance speed, returns handling, and localized carrier integrations in major European markets.",
+          imageUrl: "https://images.unsplash.com/photo-1556767576-5ec41e4b3b6f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: jcTransCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 7 * 60 * 60 * 1000)
+        });
+        this.createArticle({
+          title: "JC Trans Introduces SME Trade Finance Program",
+          slug: "jc-trans-introduces-sme-trade-finance",
+          summary: "Program addresses cashflow gaps for small forwarders and shippers.",
+          content: "The program offers invoice factoring and shipment-based credit lines to ease working capital constraints.",
+          imageUrl: "https://images.unsplash.com/photo-1542909168-3f11754be9ce?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: jcTransCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 28 * 60 * 60 * 1000)
+        });
+        this.createArticle({
+          title: "JC Trans Adds Dangerous Goods Advisory Team",
+          slug: "jc-trans-dangerous-goods-advisory",
+          summary: "Centralized support improves DG bookings and compliance outcomes.",
+          content: "Advisors provide pre‑shipment validation and documentation templates across air and ocean.",
+          imageUrl: "https://images.unsplash.com/photo-1533158361295-93c01db7201d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: jcTransCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 50 * 60 * 60 * 1000)
+        });
+        this.createArticle({
+          title: "JC Trans Launches Customer Portal Enhancements",
+          slug: "jc-trans-customer-portal-enhancements",
+          summary: "Self‑serve quotes, milestone alerts, and document center updates.",
+          content: "New features reduce support tickets and improve transparency across shipment lifecycle.",
+          imageUrl: "https://images.unsplash.com/photo-1557800636-89407f13b1eb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: jcTransCategory.id,
+          featured: false,
+          publishedAt: new Date(Date.now() - 76 * 60 * 60 * 1000)
+        });
+      }
       
       // TRADE POLICY CATEGORY
       this.createArticle({
@@ -546,6 +743,24 @@ export class MemStorage implements IStorage {
           width: 300,
           height: 250
         },
+        {
+          name: "Home Page Sidebar Middle",
+          slot: "home-sidebar-middle",
+          page: "home",
+          section: "sidebar",
+          description: "Middle ad slot in the home page sidebar",
+          width: 300,
+          height: 250
+        },
+        {
+          name: "Home Page Bottom Leaderboard",
+          slot: "home-bottom",
+          page: "home",
+          section: "bottom",
+          description: "Bottom leaderboard on home page",
+          width: 728,
+          height: 90
+        },
         
         // Category page ads
         {
@@ -565,6 +780,24 @@ export class MemStorage implements IStorage {
           description: "Ad slot in the sidebar of category pages",
           width: 300,
           height: 250
+        },
+        {
+          name: "Category Page Content",
+          slot: "category-content",
+          page: "category",
+          section: "content",
+          description: "Ad slot within category content listing",
+          width: 300,
+          height: 250
+        },
+        {
+          name: "Bottom Leaderboard (Category)",
+          slot: "bottom-leaderboard",
+          page: "category",
+          section: "bottom",
+          description: "Bottom leaderboard on category pages",
+          width: 728,
+          height: 90
         },
         
         // Article page ads
@@ -603,6 +836,25 @@ export class MemStorage implements IStorage {
           description: "Ad banner at the bottom of article pages",
           width: 728,
           height: 90
+        }
+        ,
+        {
+          name: "Sidebar Top (Generic)",
+          slot: "sidebar-top",
+          page: "article",
+          section: "sidebar",
+          description: "Generic sidebar top slot used across pages",
+          width: 300,
+          height: 250
+        },
+        {
+          name: "Sidebar Middle (Generic)",
+          slot: "sidebar-middle",
+          page: "article",
+          section: "sidebar",
+          description: "Generic sidebar middle slot used across pages",
+          width: 300,
+          height: 250
         }
       ];
       
@@ -708,6 +960,7 @@ export class MemStorage implements IStorage {
       firstName: insertUser.firstName || null,
       lastName: insertUser.lastName || null,
       role: insertUser.role || 'user',
+      networkId: insertUser.networkId ?? null,
       createdAt: new Date(),
       lastLogin: null
     };
@@ -790,7 +1043,15 @@ export class MemStorage implements IStorage {
 
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
     const id = this.categoryId++;
-    const category: Category = { ...insertCategory, id };
+    const category: Category = { 
+      id,
+      name: insertCategory.name,
+      slug: insertCategory.slug,
+      networkId: insertCategory.networkId ?? null,
+      parentId: insertCategory.parentId ?? null,
+      level: insertCategory.level ?? 1,
+      order: insertCategory.order ?? 0
+    } as Category;
     this.categories.set(id, category);
     return category;
   }
@@ -802,7 +1063,15 @@ export class MemStorage implements IStorage {
       return undefined;
     }
     
-    const updatedCategory: Category = { ...insertCategory, id };
+    const updatedCategory: Category = { 
+      id,
+      name: insertCategory.name ?? existingCategory.name,
+      slug: insertCategory.slug ?? existingCategory.slug,
+      networkId: insertCategory.networkId !== undefined ? insertCategory.networkId : existingCategory.networkId ?? null,
+      parentId: insertCategory.parentId !== undefined ? insertCategory.parentId : existingCategory.parentId ?? null,
+      level: insertCategory.level ?? existingCategory.level ?? 1,
+      order: insertCategory.order ?? existingCategory.order ?? 0
+    } as Category;
     this.categories.set(id, updatedCategory);
     return updatedCategory;
   }
@@ -816,6 +1085,14 @@ export class MemStorage implements IStorage {
     }
     
     return false;
+  }
+  
+  async getCategoriesByNetwork(networkId: number): Promise<Category[]> {
+    return Array.from(this.categories.values()).filter(c => c.networkId === networkId);
+  }
+  
+  async getChildCategories(parentId: number): Promise<Category[]> {
+    return Array.from(this.categories.values()).filter(c => c.parentId === parentId);
   }
 
   // Article operations
@@ -845,6 +1122,14 @@ export class MemStorage implements IStorage {
       .filter(article => article.categoryId === categoryId)
       .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
       .slice(offset, offset + limit);
+  }
+  
+  async getArticleCountByCategory(categoryId: number, status?: string): Promise<number> {
+    let list = Array.from(this.articles.values()).filter(a => a.categoryId === categoryId);
+    if (status) {
+      list = list.filter(a => a.status === status);
+    }
+    return list.length;
   }
 
   async getArticleBySlug(slug: string): Promise<Article | undefined> {
@@ -1093,7 +1378,7 @@ export class MemStorage implements IStorage {
     return this.advertisements.get(id);
   }
   
-  async getActiveAdvertisementForPlacement(placementId: number): Promise<Advertisement | undefined> {
+  async getActiveAdvertisementForPlacement(placementId: number, excludeId?: number): Promise<Advertisement | undefined> {
     const now = new Date();
     
     // Get all ads for this placement
@@ -1112,9 +1397,14 @@ export class MemStorage implements IStorage {
     // If no ads found, return undefined
     if (ads.length === 0) return undefined;
     
-    // If multiple ads found, implement a rotation/selection strategy
-    // For simplicity, we'll just return the ad with the highest priority (lowest priority value)
-    return ads.sort((a, b) => (a.priority || 0) - (b.priority || 0))[0];
+    // Sort by priority (lowest number = highest priority)
+    const sorted = ads.sort((a, b) => (a.priority || 0) - (b.priority || 0));
+    // If excludeId is provided, try to select the next available ad
+    if (excludeId !== undefined) {
+      const alternative = sorted.find(a => a.id !== excludeId);
+      if (alternative) return alternative;
+    }
+    return sorted[0];
   }
   
   async createAdvertisement(ad: InsertAdvertisement): Promise<Advertisement> {
@@ -1128,11 +1418,13 @@ export class MemStorage implements IStorage {
       placementId: ad.placementId,
       imageUrl: ad.imageUrl,
       linkUrl: ad.linkUrl,
+      openInNewTab: ad.openInNewTab ?? true,
       altText: ad.altText || null,
       startDate: ad.startDate || now,
       endDate: ad.endDate || null,
       active: ad.active ?? true,
       priority: ad.priority || 1,
+      position: ad.position ?? "middle",
       createdBy: ad.createdBy || null,
       createdAt: now,
       updatedAt: now,
@@ -1157,11 +1449,13 @@ export class MemStorage implements IStorage {
       placementId: adData.placementId ?? existingAd.placementId,
       imageUrl: adData.imageUrl ?? existingAd.imageUrl,
       linkUrl: adData.linkUrl ?? existingAd.linkUrl,
+      openInNewTab: adData.openInNewTab ?? existingAd.openInNewTab,
       altText: adData.altText !== undefined ? adData.altText : existingAd.altText,
       startDate: adData.startDate ?? existingAd.startDate,
       endDate: adData.endDate !== undefined ? adData.endDate : existingAd.endDate,
       active: adData.active ?? existingAd.active,
       priority: adData.priority ?? existingAd.priority,
+      position: adData.position ?? existingAd.position,
       updatedAt: new Date(),
       sponsorName: adData.sponsorName !== undefined ? adData.sponsorName : existingAd.sponsorName,
       sponsorLogo: adData.sponsorLogo !== undefined ? adData.sponsorLogo : existingAd.sponsorLogo
@@ -1201,6 +1495,109 @@ export class MemStorage implements IStorage {
     
     this.advertisements.set(id, updatedAd);
     return updatedAd;
+  }
+  
+  async getNetworks(): Promise<Network[]> {
+    return Array.from(this.networks.values());
+  }
+  
+  async getNetwork(id: number): Promise<Network | undefined> {
+    return this.networks.get(id);
+  }
+  
+  async getNetworkBySlug(slug: string): Promise<Network | undefined> {
+    return Array.from(this.networks.values()).find(n => n.slug === slug);
+  }
+  
+  async createNetwork(insertNetwork: InsertNetwork): Promise<Network> {
+    const id = this.networkId++;
+    const network: Network = {
+      id,
+      name: insertNetwork.name,
+      slug: insertNetwork.slug,
+      description: insertNetwork.description || null,
+      logoUrl: insertNetwork.logoUrl || null,
+      createdAt: new Date(),
+    } as Network;
+    this.networks.set(id, network);
+    return network;
+  }
+  
+  async updateNetwork(id: number, networkData: Partial<InsertNetwork>): Promise<Network | undefined> {
+    const existing = this.networks.get(id);
+    if (!existing) return undefined;
+    const updated: Network = {
+      ...existing,
+      name: networkData.name ?? existing.name,
+      slug: networkData.slug ?? existing.slug,
+      description: networkData.description !== undefined ? networkData.description : existing.description,
+      logoUrl: networkData.logoUrl !== undefined ? networkData.logoUrl : existing.logoUrl,
+    } as Network;
+    this.networks.set(id, updated);
+    return updated;
+  }
+  
+  async deleteNetwork(id: number): Promise<boolean> {
+    return this.networks.delete(id);
+  }
+  
+  async getContentsByNetwork(networkId: number, limit: number = 10, offset: number = 0): Promise<Content[]> {
+    const all = Array.from(this.contents.values()).filter(c => c.networkId === networkId);
+    return all.slice(offset, offset + limit);
+  }
+  
+  async getContentsByCategory(categoryId: number, limit: number = 10, offset: number = 0): Promise<Content[]> {
+    const all = Array.from(this.contents.values()).filter(c => c.categoryId === categoryId);
+    return all.slice(offset, offset + limit);
+  }
+  
+  async getContent(id: number): Promise<Content | undefined> {
+    return this.contents.get(id);
+  }
+  
+  async createContent(contentData: InsertContent): Promise<Content> {
+    const id = this.contentId++;
+    const now = new Date();
+    const content: Content = {
+      id,
+      title: contentData.title,
+      slug: contentData.slug,
+      body: contentData.body || null,
+      type: contentData.type,
+      imageUrl: contentData.imageUrl || null,
+      mediaUrl: contentData.mediaUrl || null,
+      networkId: contentData.networkId || null,
+      categoryId: contentData.categoryId || null,
+      status: contentData.status || "published",
+      createdAt: now,
+      updatedAt: now,
+    } as Content;
+    this.contents.set(id, content);
+    return content;
+  }
+  
+  async updateContent(id: number, contentData: Partial<InsertContent>): Promise<Content | undefined> {
+    const existing = this.contents.get(id);
+    if (!existing) return undefined;
+    const updated: Content = {
+      ...existing,
+      title: contentData.title ?? existing.title,
+      slug: contentData.slug ?? existing.slug,
+      body: contentData.body !== undefined ? contentData.body : existing.body,
+      type: contentData.type ?? existing.type,
+      imageUrl: contentData.imageUrl !== undefined ? contentData.imageUrl : existing.imageUrl,
+      mediaUrl: contentData.mediaUrl !== undefined ? contentData.mediaUrl : existing.mediaUrl,
+      networkId: contentData.networkId !== undefined ? contentData.networkId : existing.networkId,
+      categoryId: contentData.categoryId !== undefined ? contentData.categoryId : existing.categoryId,
+      status: contentData.status ?? existing.status,
+      updatedAt: new Date(),
+    } as Content;
+    this.contents.set(id, updated);
+    return updated;
+  }
+  
+  async deleteContent(id: number): Promise<boolean> {
+    return this.contents.delete(id);
   }
   
   async searchArticles(query: string, limit: number = 10, offset: number = 0, useAI: boolean = true): Promise<{ articles: Article[], total: number, enhancedQuery?: string, queryContext?: string }> {
