@@ -1,0 +1,36 @@
+name: Auto Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # 1. Load NVM environment so npm/node work
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            
+            # 2. Navigate to app path and update code
+            cd ${{ secrets.VPS_APP_PATH }}
+            git reset --hard
+            git pull origin main
+            
+            # 3. Install and Build
+            npm install
+            npm run build
+            
+            # 4. Restart PM2 with the PRODUCTION flag
+            # This ensures the app doesn't try to run Vite on the server
+            NODE_ENV=production ~/.nvm/versions/node/$(node -v)/bin/pm2 reload aboutmalik || \
+            NODE_ENV=production ~/.nvm/versions/node/$(node -v)/bin/pm2 start dist/server/index.js --name aboutmalik
