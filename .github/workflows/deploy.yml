@@ -1,0 +1,29 @@
+name: Deploy GSCNewsHub
+on:
+  push:
+    branches: [ main ] # Triggers every time you push to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # Navigate to your domain directory
+            cd /home/gsc/htdocs/gscnews.co
+            
+            # Pull latest changes
+            git pull origin main
+            
+            # Install and build
+            npm install
+            npm run build
+            
+            # Restart the production server
+            # We use NODE_ENV=production so it uses the 'dist' folder
+            NODE_ENV=production pm2 restart gsc-news-hub || NODE_ENV=production pm2 start dist/server/index.js --name "gsc-news-hub"
