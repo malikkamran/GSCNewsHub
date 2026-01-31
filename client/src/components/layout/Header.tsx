@@ -106,7 +106,7 @@ export default function Header() {
                     className="h-12 w-12 md:h-16 md:w-16 mr-3"
                   />
                   <span className="text-[#BB1919] font-bold text-lg md:text-2xl" style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>
-                    Global Supply Chain News
+                  Supply Chain News
                   </span>
                 </div>
               </Link>
