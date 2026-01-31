@@ -6,7 +6,6 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        'inter': ['Inter', 'sans-serif'],
         'roboto': ['Roboto', 'sans-serif'],
         'sans': ['Roboto', 'system-ui', 'sans-serif'],
       },

@@ -428,6 +428,75 @@ export class MemStorage implements IStorage {
         });
       }
       
+      // FEATURED TOP NEWS (exactly 5 items)
+      const topNewsItems: { title: string; slug: string; summary: string; content: string; imageUrl: string; categoryId: number; publishedBy: string; publishedAt: Date }[] = [
+        {
+          title: "Ocean Capacity Tightens as Asia–Europe Bookings Surge",
+          slug: "ocean-capacity-tightens-asia-europe-bookings-surge",
+          summary: "Shippers face reduced free time and rolling schedules amid renewed demand.",
+          content: "Container shipping lanes linking Asia and North Europe saw a sharp rebound in bookings over the past two weeks, prompting carriers to trim free time allowances and adjust schedules. Forwarders report tighter space controls and a preference for longer-term allocations over ad-hoc spot bookings. While rates remain below last year’s peaks, volatility has returned to the major east–west corridors. Analysts attribute the surge to replenishment cycles, delayed orders clearing customs, and early seasonal demand signals. Importers are advised to confirm documentation readiness, ensure terminal cut-off compliance, and monitor transshipment exposures. Rail alternatives are being evaluated for time-sensitive goods, though capacity is limited and subject to weather constraints.",
+          imageUrl: "https://images.unsplash.com/photo-1579532537598-459ecdaf39cc?fm=webp&w=1200&h=800&fit=crop&q=80",
+          categoryId: logisticsCategory.id,
+          publishedBy: "Byline: Alex Morgan",
+          publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        },
+        {
+          title: "Warehousing Robotics Adoption Accelerates in 2026",
+          slug: "warehousing-robotics-adoption-accelerates-2026",
+          summary: "Operators report double-digit productivity gains in pilot sites.",
+          content: "Distribution centers across North America and Europe continue to expand pilot deployments of autonomous mobile robots and goods-to-person systems. Early adopters report double-digit improvements in pick productivity and cycle-time reductions, particularly in facilities handling e‑commerce SKUs with high variability. Integrators highlight the importance of layout optimization, safety zoning, and labor change management during rollout. While capital expenditure remains a hurdle for smaller operators, subscription models are gaining traction. Inventory accuracy improvements are a secondary benefit as systems enforce scan discipline and location integrity. Observers expect consolidation among robotics vendors and WMS providers to simplify integrations and lifecycle support.",
+          imageUrl: "https://images.unsplash.com/photo-1586528116023-32477fff2847?fm=webp&w=1200&h=800&fit=crop&q=80",
+          categoryId: warehousingCategory.id,
+          publishedBy: "Byline: Priya Shah",
+          publishedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+        },
+        {
+          title: "Manufacturers Pivot to Nearshore Assembly for Faster Replenishment",
+          slug: "manufacturers-pivot-nearshore-assembly-faster-replenishment",
+          summary: "Lead-time compression and risk diversification top the agenda.",
+          content: "A growing number of manufacturers are transitioning parts of their assembly operations to nearshore locations to compress lead times and diversify risk. Executives cite shipping unpredictability, geopolitical exposure, and demand variability as catalysts for the shift. Component kitting remains centralized, but final assembly and configuration are moving closer to end markets, enabling faster replenishment and reduced working capital. Consultants recommend revisiting inventory segmentation, supplier onboarding processes, and quality escape containment plans prior to transition. Logistics players anticipate increased regional cross‑docking, multi‑modal flows, and more stringent milestone capture across inland nodes.",
+          imageUrl: "https://images.unsplash.com/photo-1565047571180-88762d8e4588?fm=webp&w=1200&h=800&fit=crop&q=80",
+          categoryId: manufacturingCategory.id,
+          publishedBy: "Byline: Elena Rossi",
+          publishedAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
+        },
+        {
+          title: "Digital Freight Platforms Add Predictive ETAs for Complex Lanes",
+          slug: "digital-freight-platforms-add-predictive-etas-complex-lanes",
+          summary: "New models improve reliability on transshipment‑heavy corridors.",
+          content: "Freight technology providers have launched upgraded ETA engines targeting corridors with multiple transshipment points. The systems blend carrier schedules, AIS, weather feeds, and historical cycle‑time variance to produce more reliable estimates. Forwarders say predictive capabilities help align drayage and warehouse labor, reduce idle time, and improve invoice accuracy. Customers welcome improved transparency but stress the need for clear exception handling when ports experience congestion or weather events. Integration with TMS and ERP platforms is underway, with APIs designed to expose timestamps, confidence bands, and cause codes for delays.",
+          imageUrl: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?fm=webp&w=1200&h=800&fit=crop&q=80",
+          categoryId: techDigitalCategory.id,
+          publishedBy: "Byline: Daniel Park",
+          publishedAt: new Date(Date.now() - 8 * 60 * 60 * 1000),
+        },
+        {
+          title: "Retailers Test Flexible Returns Networks Ahead of Holiday Peaks",
+          slug: "retailers-test-flexible-returns-networks-holiday-peaks",
+          summary: "Pop‑up hubs and dynamic carrier routing aim to stabilize customer experience.",
+          content: "Major retailers are piloting flexible returns networks that activate pop‑up hubs and dynamic carrier routing during demand spikes. The strategy aims to stabilize customer experience while reducing congestion at fixed facilities. Early trials indicate faster refund cycles and improved inventory triage when hubs are located closer to metro areas. Carriers are coordinating capacity and time‑window commitments to handle weekend surges. Industry analysts expect broader adoption as merchants push for uniform service levels across channels. Environmental concerns remain as retailers weigh the footprint of temporary sites against reduced long-haul transport requirements.",
+          imageUrl: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?fm=webp&w=1200&h=800&fit=crop&q=80",
+          categoryId: marketInsightsCategory.id,
+          publishedBy: "Byline: Jenna Lee",
+          publishedAt: new Date(Date.now() - 10 * 60 * 60 * 1000),
+        },
+      ];
+      
+      for (const item of topNewsItems) {
+        this.createArticle({
+          title: item.title,
+          slug: item.slug,
+          summary: item.summary,
+          content: item.content,
+          imageUrl: item.imageUrl,
+          categoryId: item.categoryId,
+          featured: true,
+          publishedBy: item.publishedBy,
+          publishedAt: item.publishedAt,
+          status: "published",
+        });
+      }
+      
       // GLA NETWORK NEWS
       if (glaCategory) {
         this.createArticle({

@@ -64,7 +64,7 @@ export default function NavDropdown({ label, items, muted = false }: NavDropdown
       
       {isOpen && (
         <div 
-          className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-sm w-48 py-1 z-[1200]"
+          className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-sm w-48 py-1 z-[9999]"
           role="menu"
           aria-orientation="vertical"
         >

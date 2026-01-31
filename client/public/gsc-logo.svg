@@ -1,38 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="180" viewBox="0 0 640 180" aria-labelledby="title desc" role="img">
-  <title id="title">GSC NEWS - Global Supply Chain</title>
-  <desc id="desc">Official GSC NEWS logo with red blocks for G S C, black NEWS wordmark and three red underline stripes.</desc>
-  <defs>
-    <style type="text/css"><![CDATA[
-      .red { fill: #BB1919; }
-      .white { fill: #FFFFFF; }
-      .black { fill: #000000; }
-      .sans { font-family: Helvetica, Arial, sans-serif; }
-    ]]></style>
-  </defs>
-  <!-- Background transparent -->
-  <rect x="0" y="0" width="640" height="180" fill="none"/>
-  
-  <!-- G S C blocks -->
-  <g transform="translate(10,20)">
-    <rect class="red" x="0" y="0" width="120" height="120" rx="6"/>
-    <rect class="red" x="130" y="0" width="120" height="120" rx="6"/>
-    <rect class="red" x="260" y="0" width="120" height="120" rx="6"/>
-    <text class="white sans" x="60" y="80" font-size="70" text-anchor="middle">G</text>
-    <text class="white sans" x="190" y="80" font-size="70" text-anchor="middle">S</text>
-    <text class="white sans" x="320" y="80" font-size="70" text-anchor="middle">C</text>
-  </g>
-  
-  <!-- NEWS wordmark -->
-  <text class="black sans" x="430" y="85" font-size="84" font-weight="700">NEWS</text>
-  
-  <!-- underline stripes -->
-  <g transform="translate(410,110)">
-    <rect class="red" x="0" y="0" width="210" height="6" />
-    <rect class="red" x="0" y="12" width="210" height="6" />
-    <rect class="red" x="0" y="24" width="210" height="6" />
-  </g>
-  
-  <!-- tagline -->
-  <text class="black sans" x="430" y="150" font-size="20" >Global Supply Chain</text>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <rect width="120" height="120" fill="#BB1919"/>
+  <rect x="10" y="10" width="100" height="100" fill="#BB1919" stroke="white" stroke-width="3"/>
+  <rect width="100" height="100" x="10" y="10" fill="none"/>
+  <text x="60" y="60" font-family="Arial" font-size="36" fill="white" text-anchor="middle">GSC</text>
+  <text x="60" y="85" font-family="Arial" font-size="24" fill="white" text-anchor="middle">NEWS</text>
 </svg>

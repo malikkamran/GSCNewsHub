@@ -20,6 +20,7 @@ export interface Article {
   categoryId: number;
   featured: boolean;
   publishedAt: string | Date;
+  publishedBy?: string | null;
   views: number;
 }
 

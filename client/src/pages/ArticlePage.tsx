@@ -11,6 +11,7 @@ import ExpertAnalysis from "@/components/sidebar/ExpertAnalysis";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 import { optimizeImageUrl } from "@/lib/image";
+import { getFallbackCover } from "@/lib/covers";
 
 export default function ArticlePage() {
   const { slug } = useParams();
@@ -129,14 +130,9 @@ export default function ArticlePage() {
                     alt={article.title} 
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      e.currentTarget.src = "/assets/article-placeholder.svg";
+                      e.currentTarget.src = getFallbackCover(category?.id, 1200, 800);
                     }}
                   />
-                  {category && (
-                    <div className="category-tag">
-                      {category.name.toUpperCase()}
-                    </div>
-                  )}
                 </div>
                 
                 <div className="prose max-w-none">

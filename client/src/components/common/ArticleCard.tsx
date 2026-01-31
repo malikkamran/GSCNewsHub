@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Article, Category } from "@/lib/types";
 import { format } from "date-fns";
 import { optimizeImageUrl } from "@/lib/image";
+import { getFallbackCover } from "@/lib/covers";
 
 interface ArticleCardProps {
   article: Article;
@@ -15,7 +16,7 @@ export default function ArticleCard({
   article, 
   category,
   size = "medium",
-  showCategory = true,
+  showCategory = false,
   showSummary = true
 }: ArticleCardProps) {
   const { title, slug, summary, imageUrl, publishedAt } = article;
@@ -42,13 +43,13 @@ export default function ArticleCard({
   if (size === "large") {
     return (
       <article className={containerClass}>
-        <h3 className={titleSizeClass} style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>
+        <h3 className={`${titleSizeClass} title-lg-3clamp`} style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>
           <Link href={`/article/${slug}`}>
             <span className="hover:text-[#BB1919] cursor-pointer">{title}</span>
           </Link>
         </h3>
         {showSummary && (
-          <p className="text-[#404040] mb-3 text-[0.975rem] leading-[1.4]" style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>{summary}</p>
+          <p className="summary-3clamp mb-3" style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>{summary}</p>
         )}
         <div className="relative mb-3 overflow-hidden rounded">
           <div className="w-full" style={{ maxHeight: 360 }}>
@@ -57,16 +58,12 @@ export default function ArticleCard({
               alt={title} 
               className="w-full h-auto object-cover"
               onError={(e) => {
-                e.currentTarget.src = "/assets/article-placeholder.svg";
+                e.currentTarget.src = getFallbackCover(category?.id, 1200, 800);
               }}
               loading="lazy"
             />
           </div>
-          {showCategory && category && (
-            <div className="category-tag">
-              {category.name.toUpperCase()}
-            </div>
-          )}
+          
         </div>
         <div className="flex items-center text-[0.85rem] text-[#5A5A5A]" style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>
           <span>{formattedDate}</span>
@@ -91,23 +88,19 @@ export default function ArticleCard({
           alt={title} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           onError={(e) => {
-            e.currentTarget.src = "/assets/article-placeholder.svg";
+            e.currentTarget.src = getFallbackCover(category?.id, 1200, 800);
           }}
           loading="lazy"
         />
-        {showCategory && category && (
-          <div className="category-tag">
-            {category.name.toUpperCase()}
-          </div>
-        )}
+        
       </div>
-      <h3 className={titleSizeClass} style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>
+      <h3 className={`${titleSizeClass} title-md-2clamp`} style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>
         <Link href={`/article/${slug}`}>
           <span className="hover:text-[#BB1919] cursor-pointer">{title}</span>
         </Link>
       </h3>
       {showSummary && (
-        <p className="text-[#404040] mb-3 text-[0.9375rem] leading-[1.35]" style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>{summary}</p>
+        <p className="summary-2clamp mb-3" style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>{summary}</p>
       )}
       <div className="flex items-center text-[0.8125rem] text-[#5A5A5A]" style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>
         <span>{formattedDate}</span>

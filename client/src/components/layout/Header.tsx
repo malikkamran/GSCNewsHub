@@ -103,7 +103,7 @@ export default function Header() {
                   <img 
                     src={"/@fs/Users/lorinzhu/Library/Mobile Documents/com~apple~CloudDocs/Downloads/IMac Download Folder/Alll Projects/GSCNewsHub/main-logo.jpeg"} 
                     alt="GSC News Logo" 
-                    className="h-12 md:h-16 w-auto object-contain"
+                    className="h-16 md:h-20 w-auto object-contain"
                   />
                 </div>
               </Link>
@@ -151,7 +151,7 @@ export default function Header() {
       </div>
       
       {/* Main Navigation - BBC style with white background */}
-      <div className="border-t border-[#BB1919] nav-menu nav-sticky sticky top-0 z-[1100]">
+      <div className="border-t border-[#BB1919] nav-menu nav-sticky sticky top-0 z-[9999]">
         <div className="container mx-auto px-4">
           <nav className="hidden md:block overflow-visible relative">
             <div className="overflow-x-auto overflow-y-visible">

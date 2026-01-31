@@ -89,7 +89,7 @@ function App() {
             </main>
           ) : (
             // Public site layout
-            <div className="eec-theme flex flex-col min-h-screen">
+            <div className="flex flex-col min-h-screen">
               <Header />
               <main className="flex-grow">
                 <Router />

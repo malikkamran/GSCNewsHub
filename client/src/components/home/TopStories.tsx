@@ -1,25 +1,71 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { useEffect, useRef, useState, useCallback } from "react";
+import useEmblaCarousel from "embla-carousel-react";
 import { Article, Category } from "@/lib/types";
+import { optimizeImageUrl } from "@/lib/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { getFallbackCover } from "@/lib/covers";
 
 /**
  * TopStories component that displays 3 featured articles in a grid layout
  * with overlay text and category tags, following the BBC News style.
  */
 export default function TopStories() {
-  // Get 3 featured articles
   const { data: featuredArticles, isLoading } = useQuery<Article[]>({
-    queryKey: ['/api/articles/featured'],
+    queryKey: ['/api/articles/featured?limit=5'],
     queryFn: async () => {
-      const response = await fetch('/api/articles/featured?limit=3');
+      const response = await fetch('/api/articles/featured?limit=5');
       if (!response.ok) {
         throw new Error('Failed to fetch featured articles');
       }
       return response.json();
     }
   });
+  
+  // Initialize Embla hooks unconditionally to keep consistent hook order across renders
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: 'start' });
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const autoplayRef = useRef<number | null>(null);
+  const intervalMs = 4000; // 4s within standard 3–5s
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+  useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.on('select', onSelect);
+    onSelect();
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi, onSelect]);
+  const startAutoplay = useCallback(() => {
+    if (!emblaApi) return;
+    if (autoplayRef.current !== null) {
+      window.clearInterval(autoplayRef.current);
+      autoplayRef.current = null;
+    }
+    autoplayRef.current = window.setInterval(() => {
+      emblaApi.scrollNext();
+    }, intervalMs);
+  }, [emblaApi]);
+  const stopAutoplay = useCallback(() => {
+    if (autoplayRef.current !== null) {
+      window.clearInterval(autoplayRef.current);
+      autoplayRef.current = null;
+    }
+  }, []);
+  useEffect(() => {
+    startAutoplay();
+    return () => stopAutoplay();
+  }, [startAutoplay, stopAutoplay]);
+  const onMouseEnter = () => stopAutoplay();
+  const onMouseLeave = () => startAutoplay();
+  const scrollTo = (index: number) => emblaApi?.scrollTo(index);
+  const scrollPrev = () => emblaApi?.scrollPrev();
+  const scrollNext = () => emblaApi?.scrollNext();
   
   // Get categories for displaying category names
   const { data: categories } = useQuery<Category[]>({
@@ -36,17 +82,17 @@ export default function TopStories() {
   const formatDate = (dateString: string | Date) => {
     return format(new Date(dateString), "MMM d, yyyy");
   };
+  const estimateReadTime = (text?: string) => {
+    if (!text) return "2 min read";
+    const words = text.trim().split(/\s+/).length;
+    const minutes = Math.max(1, Math.ceil(words / 200));
+    return `${minutes} min read`;
+  };
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="md:col-span-3 lg:col-span-2">
-          <Skeleton className="w-full aspect-[16/9]" />
-        </div>
-        <div className="lg:col-span-1">
-          <Skeleton className="w-full aspect-[16/9] mb-4" />
-          <Skeleton className="w-full aspect-[16/9]" />
-        </div>
+      <div className="mb-8">
+        <Skeleton className="w-full aspect-[16/9]" />
       </div>
     );
   }
@@ -59,116 +105,95 @@ export default function TopStories() {
     );
   }
 
-  // Ensure we have exactly 3 articles to display
-  const displayArticles = featuredArticles.slice(0, 3);
-  const mainArticle = displayArticles[0];
-  const secondaryArticles = displayArticles.slice(1);
+  const displayArticles = featuredArticles.slice(0, 5);
 
   return (
-    <section className="mb-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Main large article (takes ~1/2 width on desktop) */}
-        {mainArticle && (
-          <div className="md:col-span-2">
-            <Link href={`/article/${mainArticle.slug}`}>
-              <div className="relative overflow-hidden rounded group cursor-pointer h-[300px] md:h-[400px]">
-                {/* Background image */}
-                <img 
-                  src={mainArticle.imageUrl} 
-                  alt={mainArticle.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                
-                {/* Overlay content */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4 md:p-6">
-                  {/* Category tag */}
-                  <div className="bg-[#BB1919] text-white text-xs font-bold px-3 py-1 uppercase self-start mb-2">
-                    {getCategoryName(mainArticle.categoryId)}
+    <section className="mb-8" aria-label="Top news slider">
+      <div 
+        className="relative md:w-2/3" 
+        onMouseEnter={onMouseEnter} 
+        onMouseLeave={onMouseLeave}
+      >
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex">
+            {displayArticles.map((a, idx) => (
+              <div 
+                key={a.id} 
+                className="min-w-0 flex-[0_0_100%] md:flex-[0_0_100%] lg:flex-[0_0_100%] px-0"
+                aria-roledescription="slide"
+                aria-label={`Slide ${idx + 1} of ${displayArticles.length}`}
+              >
+                <Link href={`/article/${a.slug}`}>
+                  <div className="relative overflow-hidden rounded group cursor-pointer h-[300px] md:h-[400px]">
+                    <img 
+                      src={optimizeImageUrl(a.imageUrl, 1200, 80)} 
+                      alt={a.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.currentTarget.src = getFallbackCover(a.categoryId, 1200, 800);
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4 md:p-6">
+                      <h2 className="text-white text-xl md:text-3xl font-bold mb-2 leading-tight">
+                        {a.title}
+                      </h2>
+                      <p className="text-white/90 mb-2 text-sm md:text-base line-clamp-2">
+                        {a.summary}
+                      </p>
+                      <div className="text-white/80 text-xs md:text-sm flex items-center flex-wrap gap-x-2">
+                        <span>{formatDate(a.publishedAt)}</span>
+                        <span className="mx-2">|</span>
+                        <span className="uppercase font-semibold">
+                          {getCategoryName(a.categoryId)}
+                        </span>
+                        {(a as any).publishedBy && (
+                          <>
+                            <span className="mx-2">|</span>
+                            <span>{(a as any).publishedBy}</span>
+                          </>
+                        )}
+                        <span className="mx-2">|</span>
+                        <span>{estimateReadTime(a.content)}</span>
+                      </div>
+                    </div>
                   </div>
-                  
-                  {/* Title */}
-                  <h2 className="text-white text-xl md:text-3xl font-bold mb-2 leading-tight">
-                    {mainArticle.title}
-                  </h2>
-                  
-                  {/* Summary */}
-                  <p className="text-white/90 mb-2 text-sm md:text-base line-clamp-2">
-                    {mainArticle.summary}
-                  </p>
-                  
-                  {/* Date */}
-                  <div className="text-white/70 text-xs md:text-sm">
-                    {formatDate(mainArticle.publishedAt)}
-                  </div>
-                </div>
+                </Link>
               </div>
-            </Link>
+            ))}
           </div>
-        )}
-        
-        {/* Secondary articles (display horizontally, ~1/2 width together on desktop) */}
-        <div className="md:col-span-1">
-          {secondaryArticles.length > 0 && (
-            <Link href={`/article/${secondaryArticles[0].slug}`}>
-              <div className="relative overflow-hidden rounded group cursor-pointer h-[200px] mb-4">
-                {/* Background image */}
-                <img 
-                  src={secondaryArticles[0].imageUrl} 
-                  alt={secondaryArticles[0].title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                
-                {/* Overlay content */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4">
-                  {/* Category tag */}
-                  <div className="bg-[#BB1919] text-white text-xs font-bold px-2 py-1 uppercase self-start mb-2">
-                    {getCategoryName(secondaryArticles[0].categoryId)}
-                  </div>
-                  
-                  {/* Title */}
-                  <h3 className="text-white text-lg font-bold mb-1 leading-tight">
-                    {secondaryArticles[0].title}
-                  </h3>
-                  
-                  {/* Date */}
-                  <div className="text-white/70 text-xs">
-                    {formatDate(secondaryArticles[0].publishedAt)}
-                  </div>
-                </div>
-              </div>
-            </Link>
-          )}
-          
-          {secondaryArticles.length > 1 && (
-            <Link href={`/article/${secondaryArticles[1].slug}`}>
-              <div className="relative overflow-hidden rounded group cursor-pointer h-[200px]">
-                {/* Background image */}
-                <img 
-                  src={secondaryArticles[1].imageUrl} 
-                  alt={secondaryArticles[1].title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                
-                {/* Overlay content */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-4">
-                  {/* Category tag */}
-                  <div className="bg-[#BB1919] text-white text-xs font-bold px-2 py-1 uppercase self-start mb-2">
-                    {getCategoryName(secondaryArticles[1].categoryId)}
-                  </div>
-                  
-                  {/* Title */}
-                  <h3 className="text-white text-lg font-bold mb-1 leading-tight">
-                    {secondaryArticles[1].title}
-                  </h3>
-                  
-                  {/* Date */}
-                  <div className="text-white/70 text-xs">
-                    {formatDate(secondaryArticles[1].publishedAt)}
-                  </div>
-                </div>
-              </div>
-            </Link>
-          )}
+        </div>
+
+        {/* Prev/Next controls */}
+        <button 
+          type="button" 
+          onClick={scrollPrev} 
+          aria-label="Previous slide"
+          className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/60 focus:outline-none"
+        >
+          ‹
+        </button>
+        <button 
+          type="button" 
+          onClick={scrollNext} 
+          aria-label="Next slide"
+          className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-black/60 focus:outline-none"
+        >
+          ›
+        </button>
+
+        {/* Dot indicators */}
+        <div className="flex justify-center gap-2 mt-3" role="tablist" aria-label="Slide navigation">
+          {displayArticles.map((_a, i) => (
+            <button 
+              key={i} 
+              type="button" 
+              role="tab" 
+              aria-selected={selectedIndex === i}
+              aria-label={`Go to slide ${i + 1}`}
+              onClick={() => scrollTo(i)}
+              className={`w-2.5 h-2.5 rounded-full ${selectedIndex === i ? 'bg-[#BB1919]' : 'bg-gray-300'} focus:outline-none`}
+            />
+          ))}
         </div>
       </div>
     </section>
