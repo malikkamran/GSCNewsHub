@@ -10,21 +10,22 @@ jobs:
       - name: SSH and Deploy
         uses: appleboy/ssh-action@master
         with:
-          # Using your updated secret names
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Navigate to your app path using your secret
+            # 1. Navigate to the project folder
             cd ${{ secrets.VPS_APP_PATH }}
             
-            # Pull latest code from GitHub
+            # 2. Get latest changes
             git pull origin main
             
-            # Install dependencies and build the project
-            npm install
-            npm run build
+            # 3. Use absolute paths for NPM to install and build
+            # This ensures the dist/ folder is updated for production
+            /home/gsc/.nvm/versions/node/v20.20.0/bin/npm install
+            /home/gsc/.nvm/versions/node/v20.20.0/bin/npm run build
             
-            # Restart the server in production mode
-            # This ensures the 'dist' folder is used correctly
-            NODE_ENV=production pm2 restart gsc-news-hub || NODE_ENV=production pm2 start dist/server/index.js --name "gsc-news-hub"
+            # 4. Use absolute path for PM2 to restart the app
+            # We must use NODE_ENV=production so it serves files from 'dist'
+            NODE_ENV=production /home/gsc/.nvm/versions/node/v20.20.0/bin/pm2 restart gsc-news-hub || \
+            NODE_ENV=production /home/gsc/.nvm/versions/node/v20.20.0/bin/pm2 start dist/server/index.js --name "gsc-news-hub"
