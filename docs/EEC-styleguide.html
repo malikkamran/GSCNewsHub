@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en" class="eec-theme">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EEC Design & Typography Styleguide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root, .eec-theme {
+      --primary: #162741;
+      --gold: #B58E46;
+      --white: #FCFCFC;
+      --gray: #737D8D;
+      --bg-blue: #EDF0F9;
+      --bg-gray: #F6F6F6;
+      --line: #DDDDDD;
+    }
+    body { font-family: Inter, sans-serif; color: var(--primary); background: var(--white); margin: 32px; }
+    h1 { font-weight: 600; font-size: 46px; margin-bottom: 16px; }
+    h2 { font-weight: 600; font-size: 38px; margin: 24px 0 12px; }
+    h3 { font-weight: 500; font-size: 30px; margin: 20px 0 10px; }
+    p, li { font-size: 16px; line-height: 1.5; }
+    code, pre { background: var(--bg-gray); padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; display: block; }
+    .palette { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .swatch { border: 1px solid var(--line); padding: 12px; border-radius: 6px; }
+    .swatch .box { height: 48px; border-radius: 4px; margin-bottom: 8px; }
+    .box.primary { background: var(--primary); }
+    .box.gold { background: var(--gold); }
+    .box.white { background: var(--white); border: 1px solid var(--line); }
+    .box.gray { background: var(--gray); }
+    .box.bg-blue { background: var(--bg-blue); }
+    .box.bg-gray { background: var(--bg-gray); }
+    .box.line { background: var(--line); }
+    .section { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+    @media print {
+      body { margin: 12mm; }
+      a[href]:after { content: " (" attr(href) ")"; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>EEC Design & Typography Styleguide</h1>
+  <div class="section">
+    <h2>1) Font Families and CSS Properties</h2>
+    <ul>
+      <li>Inter: global sans for body/headings; sizes 16/18/20/24/30/38/46; weights 400/500/600</li>
+      <li>Roboto: form selects/controls; size 14; weight 300; color #142642</li>
+      <li>Body: Inter 16px 400; line-height ~1.5</li>
+      <li>Headings: H1/H2 at 600; H3/H4 at 500</li>
+    </ul>
+  </div>
+  <div class="section">
+    <h2>2) Visual Hierarchy & Typography Scale</h2>
+    <p>Base 16px with scale: 18/20/24/30/38/46. Weights 600/500/400 aligned to hierarchy. Small text at 12–14px.</p>
+  </div>
+  <div class="section">
+    <h2>3) Patterns: Headers, Body, Interactions</h2>
+    <ul>
+      <li>Headers: strong size/weight contrast, consistent spacing</li>
+      <li>Body: Inter 16px 400, comfortable line-height</li>
+      <li>Buttons/Inputs: token-driven colors, transitions ~0.2–0.3s, visible focus</li>
+      <li>Tabs/Cards: hover emphasis, subtle elevation</li>
+    </ul>
+  </div>
+  <div class="section">
+    <h2>4) Color Palette (Hex) & Usage</h2>
+    <div class="palette">
+      <div class="swatch"><div class="box primary"></div><div>#162741 Primary</div></div>
+      <div class="swatch"><div class="box gold"></div><div>#B58E46 Gold</div></div>
+      <div class="swatch"><div class="box white"></div><div>#FCFCFC White</div></div>
+      <div class="swatch"><div class="box gray"></div><div>#737D8D Gray</div></div>
+      <div class="swatch"><div class="box bg-blue"></div><div>#EDF0F9 BG Blue</div></div>
+      <div class="swatch"><div class="box bg-gray"></div><div>#F6F6F6 BG Gray</div></div>
+      <div class="swatch"><div class="box line"></div><div>#DDDDDD Line</div></div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>5) Spacing & Layout Grid</h2>
+    <p>Spacing: 4/8/12/16/20/24/32/48px. Grid: 2–5 columns responsive; breakpoints ~430/767/1023/1279/1280/1480; containers mix % and fixed widths.</p>
+  </div>
+  <div class="section">
+    <h2>6) Emotional Impact & Brand</h2>
+    <p>Formal, trustworthy, authoritative. Blue-centric palette with gold accents; modern clarity via Inter; maintain AA contrast.</p>
+  </div>
+  <div class="section">
+    <h2>Implementation</h2>
+    <pre><code>@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+.eec-theme body{font-family:Inter,sans-serif}
+h1{font-weight:600;font-size:46px}
+h2{font-weight:600;font-size:38px}
+h3{font-weight:500;font-size:30px}
+body{font-weight:400;font-size:16px}
+.small{font-size:14px}
+.btn-primary{background:#162741;color:#FCFCFC;padding:12px 20px}</code></pre>
+  </div>
+</body>
+</html>
