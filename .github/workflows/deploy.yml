@@ -14,18 +14,22 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # 1. Navigate to the project folder
+            # 1. Add the Node/NVM bin directory to the PATH
+            # This ensures 'node' is found when npm or pm2 runs
+            export PATH=$PATH:/home/gsc/.nvm/versions/node/v20.20.0/bin
+            
+            # 2. Navigate to the project folder
             cd ${{ secrets.VPS_APP_PATH }}
             
-            # 2. Get latest changes
+            # 3. Get latest changes
             git pull origin main
             
-            # 3. Use absolute paths for NPM to install and build
-            # This ensures the dist/ folder is updated for production
-            /home/gsc/.nvm/versions/node/v20.20.0/bin/npm install
-            /home/gsc/.nvm/versions/node/v20.20.0/bin/npm run build
+            # 4. Run installation and build
+            # The build script runs 'vite build' and 'esbuild'
+            npm install
+            npm run build
             
-            # 4. Use absolute path for PM2 to restart the app
-            # We must use NODE_ENV=production so it serves files from 'dist'
-            NODE_ENV=production /home/gsc/.nvm/versions/node/v20.20.0/bin/pm2 restart gsc-news-hub || \
-            NODE_ENV=production /home/gsc/.nvm/versions/node/v20.20.0/bin/pm2 start dist/server/index.js --name "gsc-news-hub"
+            # 5. Restart the app in production mode
+            # This ensures the 'dist' folder is served correctly
+            NODE_ENV=production pm2 restart gsc-news-hub || \
+            NODE_ENV=production pm2 start dist/server/index.js --name "gsc-news-hub"
