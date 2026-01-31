@@ -101,13 +101,10 @@ export default function Header() {
               <Link href="/">
                 <div className="flex items-center cursor-pointer">
                   <img 
-                    src="/gsc-logo.svg" 
+                    src={"/@fs/Users/lorinzhu/Library/Mobile Documents/com~apple~CloudDocs/Downloads/IMac Download Folder/Alll Projects/GSCNewsHub/main-logo.jpeg"} 
                     alt="GSC News Logo" 
-                    className="h-12 w-12 md:h-16 md:w-16 mr-3"
+                    className="h-12 md:h-16 w-auto object-contain"
                   />
-                  <span className="text-[#BB1919] font-bold text-lg md:text-2xl" style={{fontFamily: 'Helvetica, Arial, sans-serif'}}>
-                  Supply Chain News
-                  </span>
                 </div>
               </Link>
             </div>
