@@ -1,7 +1,7 @@
 name: Deploy GSCNewsHub
 on:
   push:
-    branches: [ main ] # Triggers every time you push to the main branch
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -10,20 +10,21 @@ jobs:
       - name: SSH and Deploy
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
+          # Using your updated secret names
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Navigate to your domain directory
-            cd /home/gsc/htdocs/gscnews.co
+            # Navigate to your app path using your secret
+            cd ${{ secrets.VPS_APP_PATH }}
             
-            # Pull latest changes
+            # Pull latest code from GitHub
             git pull origin main
             
-            # Install and build
+            # Install dependencies and build the project
             npm install
             npm run build
             
-            # Restart the production server
-            # We use NODE_ENV=production so it uses the 'dist' folder
+            # Restart the server in production mode
+            # This ensures the 'dist' folder is used correctly
             NODE_ENV=production pm2 restart gsc-news-hub || NODE_ENV=production pm2 start dist/server/index.js --name "gsc-news-hub"
