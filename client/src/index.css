@@ -4,8 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import "./styles/eec-theme.css";
-
 /* BBC News font and styling standards */
 :root {
   --bbc-red: #BB1919;

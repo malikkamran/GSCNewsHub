@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { LogOut, Menu, Search, User, Settings } from "lucide-react";
+import { LogOut, Menu, Search, User, Settings, LayoutDashboard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +8,7 @@ import { Category } from "@/lib/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import NavDropdown from "./NavDropdown";
 import { useAuth } from "@/hooks/use-auth";
+import { getRedirectPath } from "@/lib/auth-utils";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -57,19 +58,14 @@ export default function Header() {
                     <span className="text-xs">{user.username}</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-48 z-[10000]">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="flex items-center gap-2" asChild>
-                    <Link href="/preferences">
-                      <Settings size={14} />
-                      <span>Preferences</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  {user.role === 'admin' && (
+                  {(user.role === 'admin' || user.role === 'partner') && (
                     <DropdownMenuItem className="flex items-center gap-2" asChild>
-                      <Link href="/admin/dashboard">
-                        <span>Admin Dashboard</span>
+                      <Link href={getRedirectPath(user)}>
+                        <LayoutDashboard size={14} />
+                        <span>Dashboard</span>
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -286,17 +282,30 @@ export default function Header() {
               <li>
                 <div className="flex items-center justify-between py-2 border-b border-gray-700">
                   <span className="text-gray-300">Signed in as {user.username}</span>
-                  <Button 
-                    variant="ghost" 
-                    className="text-gray-300 px-2 py-1 hover:text-white" 
-                    onClick={() => {
-                      handleLogout();
-                      toggleMobileMenu(); // Also close the mobile menu
-                    }}
-                  >
-                    <LogOut size={16} className="mr-1" />
-                    <span>Log out</span>
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {(user.role === 'admin' || user.role === 'partner') && (
+                      <Link href={getRedirectPath(user)} onClick={() => toggleMobileMenu()}>
+                        <Button 
+                          variant="ghost" 
+                          className="text-gray-300 px-2 py-1 hover:text-white"
+                        >
+                          <LayoutDashboard size={16} className="mr-1" />
+                          <span>Dashboard</span>
+                        </Button>
+                      </Link>
+                    )}
+                    <Button 
+                      variant="ghost" 
+                      className="text-gray-300 px-2 py-1 hover:text-white" 
+                      onClick={() => {
+                        handleLogout();
+                        toggleMobileMenu(); // Also close the mobile menu
+                      }}
+                    >
+                      <LogOut size={16} className="mr-1" />
+                      <span>Log out</span>
+                    </Button>
+                  </div>
                 </div>
               </li>
             ) : (

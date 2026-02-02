@@ -9,7 +9,8 @@ import {
   adPlacements, type AdPlacement, type InsertAdPlacement,
   advertisements, type Advertisement, type InsertAdvertisement,
   networks, type Network, type InsertNetwork,
-  contents, type Content, type InsertContent
+  contents, type Content, type InsertContent,
+  siteStatistics, type SiteStatistics, type InsertSiteStatistics
 } from "@shared/schema";
 import { DatabaseStorage } from "./storage-db";
 
@@ -22,6 +23,12 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
+  
+  // Site Statistics operations
+  getSiteStatistics(): Promise<SiteStatistics[]>;
+  getSiteStatisticByKey(key: string): Promise<SiteStatistics | undefined>;
+  createSiteStatistic(stat: InsertSiteStatistics): Promise<SiteStatistics>;
+  updateSiteStatistic(key: string, stat: Partial<InsertSiteStatistics>): Promise<SiteStatistics | undefined>;
   
   // Network operations
   getNetworks(): Promise<Network[]>;
@@ -51,6 +58,7 @@ export interface IStorage {
   // Article operations
   getArticles(limit?: number, offset?: number, status?: string): Promise<Article[]>;
   getArticlesByCategory(categoryId: number, limit?: number, offset?: number): Promise<Article[]>;
+  getArticlesByPartnerCategory(partnerCategoryId: number, limit?: number, offset?: number): Promise<Article[]>;
   getArticleCountByCategory(categoryId: number, status?: string): Promise<number>;
   getArticleBySlug(slug: string): Promise<Article | undefined>;
   getArticle(id: number): Promise<Article | undefined>;
@@ -126,6 +134,7 @@ export interface SeedSnapshot {
   userPreferences: UserPreferences[];
   adPlacements: AdPlacement[];
   advertisements: Advertisement[];
+  siteStatistics: SiteStatistics[];
 }
 
 export class MemStorage implements IStorage {
@@ -140,6 +149,7 @@ export class MemStorage implements IStorage {
   private userPreferences: Map<number, UserPreferences>;
   private adPlacements: Map<number, AdPlacement>;
   private advertisements: Map<number, Advertisement>;
+  private siteStatistics: Map<number, SiteStatistics>;
   
   private userId: number = 1;
   private networkId: number = 1;
@@ -152,6 +162,7 @@ export class MemStorage implements IStorage {
   private userPreferenceId: number = 1;
   private adPlacementId: number = 1;
   private advertisementId: number = 1;
+  private siteStatisticsId: number = 1;
 
   constructor() {
     this.users = new Map();
@@ -165,18 +176,67 @@ export class MemStorage implements IStorage {
     this.userPreferences = new Map();
     this.adPlacements = new Map();
     this.advertisements = new Map();
+    this.siteStatistics = new Map();
     
     // Initialize with default categories
     this.initializeData();
   }
 
   private initializeData() {
+    // Initialize site statistics
+    const defaultStats: InsertSiteStatistics[] = [
+      {
+        key: 'monthly_visitors',
+        value: '2.4M',
+        label: 'Monthly Unique Visitors',
+        changePercentage: 12,
+        icon: 'users',
+        updatedBy: 1
+      },
+      {
+        key: 'global_partners',
+        value: '150+',
+        label: 'Global Partners',
+        changePercentage: 8,
+        icon: 'globe',
+        updatedBy: 1
+      },
+      {
+        key: 'news_articles',
+        value: '12K+',
+        label: 'News Articles',
+        changePercentage: 24,
+        icon: 'file-text',
+        updatedBy: 1
+      },
+      {
+        key: 'avg_engagement',
+        value: '18min',
+        label: 'Avg. Engagement Time',
+        changePercentage: 5,
+        icon: 'clock',
+        updatedBy: 1
+      }
+    ];
+
+    defaultStats.forEach(stat => this.createSiteStatistic(stat));
+
     // Create default admin user
     this.createUser({
       username: "admin",
       password: "admin123",
       email: "admin@gscnews.co",
       role: "admin"
+    });
+
+    // Create default partner user
+    this.createUser({
+      username: "gla",
+      password: "Partner2024!",
+      email: "gla@partner.com",
+      role: "partner",
+      firstName: "GLA",
+      lastName: "Network"
     });
     
     // Create categories matching our navigation menu
@@ -230,6 +290,12 @@ export class MemStorage implements IStorage {
     this.networks.set(jcNetId, { id: jcNetId, name: "JC Trans Networks", slug: "jc-trans-networks", description: null, logoUrl: null, createdAt: new Date() } as Network);
     if (glaCategory) {
       this.updateCategory(glaCategory.id, { name: glaCategory.name, slug: glaCategory.slug, parentId: null, networkId: glaNetId, level: 1, order: 0 });
+      
+      // Update GLA user with partner category ID
+      const glaUser = Array.from(this.users.values()).find(u => u.username === "gla");
+      if (glaUser) {
+        this.updateUser(glaUser.id, { partnerCategoryId: glaCategory.id });
+      }
     }
     if (wcaCategory) {
       this.updateCategory(wcaCategory.id, { name: wcaCategory.name, slug: wcaCategory.slug, parentId: null, networkId: wcaNetId, level: 1, order: 0 });
@@ -499,6 +565,35 @@ export class MemStorage implements IStorage {
       
       // GLA NETWORK NEWS
       if (glaCategory) {
+        // Tagged News for GLA Partner Dashboard
+        this.createArticle({
+          title: "GLA Network Launches New Member Portal",
+          slug: "gla-network-new-member-portal",
+          summary: "Enhanced digital tools for global members to connect and collaborate.",
+          content: "GLA has unveiled its new member portal featuring advanced search capabilities, real-time messaging, and integrated shipment tracking. This update aims to foster greater collaboration among its 5,000+ members worldwide.",
+          imageUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: glaCategory.id,
+          partnerCategoryId: glaCategory.id,
+          tags: ["GLA", "Digital", "Portal"],
+          featured: false,
+          status: "published",
+          publishedAt: new Date()
+        });
+
+        this.createArticle({
+          title: "GLA Annual Summit 2026: Key Takeaways",
+          slug: "gla-annual-summit-2026-takeaways",
+          summary: "Highlights from the global gathering of logistics leaders.",
+          content: "The 2026 GLA Annual Summit concluded with a focus on sustainability and digital transformation. Key outcomes include a new carbon offset program and a strategic partnership with major tech providers.",
+          imageUrl: "https://images.unsplash.com/photo-1544531586-fde5298cdd40?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+          categoryId: glaCategory.id,
+          partnerCategoryId: glaCategory.id,
+          tags: ["GLA", "Events", "Summit"],
+          featured: false,
+          status: "published",
+          publishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+        });
+
         this.createArticle({
           title: "GLA Expands Asia–Europe Freight Corridors",
           slug: "gla-expands-asia-europe-corridors",
@@ -550,6 +645,7 @@ export class MemStorage implements IStorage {
           content: "The toolkit consolidates carrier data, voyage legs, and emissions factors to produce auditable statements for sustainability reporting.",
           imageUrl: "https://images.unsplash.com/photo-1505761671935-60b3a7427bad?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
           categoryId: wcaCategory.id,
+          partnerCategoryId: wcaCategory.id,
           featured: false,
           publishedAt: new Date(Date.now() - 9 * 60 * 60 * 1000)
         });
@@ -560,6 +656,7 @@ export class MemStorage implements IStorage {
           content: "The common API reduces duplicate entry, aligns milestones, and enables predictive ETAs across origins and destinations.",
           imageUrl: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
           categoryId: wcaCategory.id,
+          partnerCategoryId: wcaCategory.id,
           featured: false,
           publishedAt: new Date(Date.now() - 32 * 60 * 60 * 1000)
         });
@@ -570,6 +667,7 @@ export class MemStorage implements IStorage {
           content: "The track covers lane risk assessment, thermal packaging selection, and excursion monitoring for temperature-sensitive cargo.",
           imageUrl: "https://images.unsplash.com/photo-1516542076529-1ea3854896e1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
           categoryId: wcaCategory.id,
+          partnerCategoryId: wcaCategory.id,
           featured: false,
           publishedAt: new Date(Date.now() - 55 * 60 * 60 * 1000)
         });
@@ -580,6 +678,7 @@ export class MemStorage implements IStorage {
           content: "Focus areas include customs modernization, multimodal development, and digitization for trade facilitation.",
           imageUrl: "https://images.unsplash.com/photo-1518459031867-a89b944bffe5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
           categoryId: wcaCategory.id,
+          partnerCategoryId: wcaCategory.id,
           featured: false,
           publishedAt: new Date(Date.now() - 80 * 60 * 60 * 1000)
         });
@@ -594,6 +693,7 @@ export class MemStorage implements IStorage {
           content: "Investments target customs clearance speed, returns handling, and localized carrier integrations in major European markets.",
           imageUrl: "https://images.unsplash.com/photo-1556767576-5ec41e4b3b6f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
           categoryId: jcTransCategory.id,
+          partnerCategoryId: jcTransCategory.id,
           featured: false,
           publishedAt: new Date(Date.now() - 7 * 60 * 60 * 1000)
         });
@@ -604,6 +704,7 @@ export class MemStorage implements IStorage {
           content: "The program offers invoice factoring and shipment-based credit lines to ease working capital constraints.",
           imageUrl: "https://images.unsplash.com/photo-1542909168-3f11754be9ce?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
           categoryId: jcTransCategory.id,
+          partnerCategoryId: jcTransCategory.id,
           featured: false,
           publishedAt: new Date(Date.now() - 28 * 60 * 60 * 1000)
         });
@@ -614,6 +715,7 @@ export class MemStorage implements IStorage {
           content: "Advisors provide pre‑shipment validation and documentation templates across air and ocean.",
           imageUrl: "https://images.unsplash.com/photo-1533158361295-93c01db7201d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
           categoryId: jcTransCategory.id,
+          partnerCategoryId: jcTransCategory.id,
           featured: false,
           publishedAt: new Date(Date.now() - 50 * 60 * 60 * 1000)
         });
@@ -624,6 +726,7 @@ export class MemStorage implements IStorage {
           content: "New features reduce support tickets and improve transparency across shipment lifecycle.",
           imageUrl: "https://images.unsplash.com/photo-1557800636-89407f13b1eb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
           categoryId: jcTransCategory.id,
+          partnerCategoryId: jcTransCategory.id,
           featured: false,
           publishedAt: new Date(Date.now() - 76 * 60 * 60 * 1000)
         });
@@ -1021,6 +1124,41 @@ export class MemStorage implements IStorage {
     return false;
   }
 
+  // Site Statistics operations
+  async getSiteStatistics(): Promise<SiteStatistics[]> {
+    return Array.from(this.siteStatistics.values());
+  }
+
+  async getSiteStatisticByKey(key: string): Promise<SiteStatistics | undefined> {
+    return Array.from(this.siteStatistics.values()).find(stat => stat.key === key);
+  }
+
+  async createSiteStatistic(stat: InsertSiteStatistics): Promise<SiteStatistics> {
+    const id = this.siteStatisticsId++;
+    const newStat: SiteStatistics = {
+      ...stat,
+      id,
+      updatedAt: new Date(),
+      changePercentage: stat.changePercentage ?? null,
+      updatedBy: stat.updatedBy ?? null
+    };
+    this.siteStatistics.set(id, newStat);
+    return newStat;
+  }
+
+  async updateSiteStatistic(key: string, statUpdate: Partial<InsertSiteStatistics>): Promise<SiteStatistics | undefined> {
+    const existingStat = await this.getSiteStatisticByKey(key);
+    if (!existingStat) return undefined;
+
+    const updatedStat: SiteStatistics = {
+      ...existingStat,
+      ...statUpdate,
+      updatedAt: new Date()
+    };
+    this.siteStatistics.set(existingStat.id, updatedStat);
+    return updatedStat;
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
     const user: User = { 
@@ -1031,7 +1169,8 @@ export class MemStorage implements IStorage {
       role: insertUser.role || 'user',
       networkId: insertUser.networkId ?? null,
       createdAt: new Date(),
-      lastLogin: null
+      lastLogin: null,
+      partnerCategoryId: insertUser.partnerCategoryId || null
     };
     this.users.set(id, user);
     return user;
@@ -1168,10 +1307,6 @@ export class MemStorage implements IStorage {
   async getArticles(limit: number = 10, offset: number = 0, status?: string): Promise<Article[]> {
     let articles = Array.from(this.articles.values());
     
-    // Log the status parameter for debugging
-    console.log(`Fetching articles with status filter: ${status || 'none'}`);
-    console.log(`Before filtering: ${articles.length} articles`);
-    
     // Filter by status if provided
     if (status) {
       articles = articles.filter(article => article.status === status);
@@ -1189,6 +1324,13 @@ export class MemStorage implements IStorage {
   async getArticlesByCategory(categoryId: number, limit: number = 10, offset: number = 0): Promise<Article[]> {
     return Array.from(this.articles.values())
       .filter(article => article.categoryId === categoryId)
+      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+      .slice(offset, offset + limit);
+  }
+
+  async getArticlesByPartnerCategory(partnerCategoryId: number, limit: number = 10, offset: number = 0): Promise<Article[]> {
+    return Array.from(this.articles.values())
+      .filter(article => article.partnerCategoryId === partnerCategoryId)
       .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
       .slice(offset, offset + limit);
   }
@@ -1239,7 +1381,9 @@ export class MemStorage implements IStorage {
       featured: insertArticle.featured || false,
       status: insertArticle.status || "published",
       publishedBy: insertArticle.publishedBy || null,
-      publishedAt: insertArticle.publishedAt || new Date()
+      publishedAt: insertArticle.publishedAt || new Date(),
+      partnerCategoryId: insertArticle.partnerCategoryId ?? null,
+      tags: insertArticle.tags ?? null
     };
     this.articles.set(id, article);
     return article;
@@ -1265,7 +1409,9 @@ export class MemStorage implements IStorage {
       // Ensure status is updated when it's explicitly provided in the update
       status: insertArticle.status !== undefined ? insertArticle.status : existingArticle.status || "published",
       publishedBy: insertArticle.publishedBy || existingArticle.publishedBy || null,
-      publishedAt: insertArticle.publishedAt || existingArticle.publishedAt
+      publishedAt: insertArticle.publishedAt || existingArticle.publishedAt,
+      partnerCategoryId: insertArticle.partnerCategoryId !== undefined ? insertArticle.partnerCategoryId : existingArticle.partnerCategoryId,
+      tags: insertArticle.tags !== undefined ? insertArticle.tags : existingArticle.tags
     };
     
     this.articles.set(id, updatedArticle);
@@ -1956,6 +2102,7 @@ export class MemStorage implements IStorage {
       userPreferences: Array.from(this.userPreferences.values()),
       adPlacements: Array.from(this.adPlacements.values()),
       advertisements: Array.from(this.advertisements.values()),
+      siteStatistics: Array.from(this.siteStatistics.values()),
     };
   }
 }

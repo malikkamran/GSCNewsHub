@@ -64,24 +64,29 @@ export default function NavDropdown({ label, items, muted = false }: NavDropdown
       
       {isOpen && (
         <div 
-          className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-sm w-48 py-1 z-[9999]"
-          role="menu"
-          aria-orientation="vertical"
+          className="absolute top-full left-0 pt-2 w-48 z-[9999]"
+          onMouseEnter={() => setIsOpen(true)}
         >
-          {items.map((item, index) => (
-            <Link 
-              key={index} 
-              href={`/category/${item.slug}`}
-              onClick={() => setIsOpen(false)}
-            >
-              <span 
-                className="block px-4 py-2 text-sm text-gray-800 hover:bg-[#BB1919] hover:text-white cursor-pointer focus-visible:outline-none focus-visible:bg-[#BB1919] focus-visible:text-white"
-                role="menuitem"
+          <div 
+            className="bg-white shadow-lg rounded-md py-2 border border-gray-100"
+            role="menu"
+            aria-orientation="vertical"
+          >
+            {items.map((item, index) => (
+              <Link 
+                key={index} 
+                href={`/category/${item.slug}`}
+                onClick={() => setIsOpen(false)}
               >
-                {item.label}
-              </span>
-            </Link>
-          ))}
+                <span 
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#BB1919] cursor-pointer transition-colors"
+                  role="menuitem"
+                >
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
     </div>

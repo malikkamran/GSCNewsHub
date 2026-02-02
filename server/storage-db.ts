@@ -12,6 +12,7 @@ import {
   advertisements,
   networks,
   contents,
+  siteStatistics,
   type User,
   type InsertUser,
   type Category,
@@ -34,6 +35,8 @@ import {
   type InsertNetwork,
   type Content,
   type InsertContent,
+  type SiteStatistics,
+  type InsertSiteStatistics,
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
@@ -72,6 +75,28 @@ export class DatabaseStorage implements IStorage {
   async deleteUser(id: number): Promise<boolean> {
     const result = await this.db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
     return result.length > 0;
+  }
+
+  async getSiteStatistics(): Promise<SiteStatistics[]> {
+    return this.db.select().from(siteStatistics).orderBy(asc(siteStatistics.id));
+  }
+
+  async getSiteStatisticByKey(key: string): Promise<SiteStatistics | undefined> {
+    const result = await this.db.select().from(siteStatistics).where(eq(siteStatistics.key, key)).limit(1);
+    return result[0];
+  }
+
+  async createSiteStatistic(stat: InsertSiteStatistics): Promise<SiteStatistics> {
+    const result = await this.db.insert(siteStatistics).values(stat).returning();
+    return result[0];
+  }
+
+  async updateSiteStatistic(key: string, stat: Partial<InsertSiteStatistics>): Promise<SiteStatistics | undefined> {
+    const result = await this.db.update(siteStatistics)
+      .set({ ...stat, updatedAt: new Date() })
+      .where(eq(siteStatistics.key, key))
+      .returning();
+    return result[0];
   }
   
   async getNetworks(): Promise<Network[]> {
@@ -182,6 +207,16 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(articles)
       .where(eq(articles.categoryId, categoryId))
+      .orderBy(desc(articles.publishedAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getArticlesByPartnerCategory(partnerCategoryId: number, limit: number = 10, offset: number = 0): Promise<Article[]> {
+    return this.db
+      .select()
+      .from(articles)
+      .where(eq(articles.partnerCategoryId, partnerCategoryId))
       .orderBy(desc(articles.publishedAt))
       .limit(limit)
       .offset(offset);

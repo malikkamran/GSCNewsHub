@@ -58,7 +58,8 @@ export default function Users() {
     username: "",
     email: "",
     password: "",
-    role: "editor" // Default role
+    role: "editor", // Default role
+    partnerTagName: ""
   });
 
   const { data: users, isLoading, error } = useQuery({
@@ -66,7 +67,22 @@ export default function Users() {
     staleTime: 1000 * 60, // 1 minute
   });
 
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+    retry: false,
+  });
+
   const handleAddUser = async () => {
+    // Validate partner tag name if role is partner
+    if (formData.role === "partner" && !formData.partnerTagName.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Partner Tag Name is required for Partner role",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await apiRequest("POST", "/api/users", formData);
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -75,7 +91,8 @@ export default function Users() {
         username: "",
         email: "",
         password: "",
-        role: "editor"
+        role: "editor",
+        partnerTagName: ""
       });
       toast({
         title: "Success",
@@ -147,7 +164,8 @@ export default function Users() {
       username: user.username,
       email: user.email || "",
       password: "",
-      role: user.role || "editor"
+      role: user.role || "editor",
+      partnerTagName: ""
     });
     setIsEditUserDialogOpen(true);
   };
@@ -297,8 +315,48 @@ export default function Users() {
               >
                 <option value="editor">Editor</option>
                 <option value="admin">Admin</option>
+                <option value="partner">Partner</option>
               </select>
             </div>
+            {formData.role === "partner" && (
+              <div className="grid gap-2">
+                <Label htmlFor="partnerTagName">Partner Tag Name</Label>
+                <div className="flex flex-col gap-2">
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "new") {
+                        setFormData({ ...formData, partnerTagName: "" });
+                      } else {
+                        setFormData({ ...formData, partnerTagName: val });
+                      }
+                    }}
+                    value={categories.some(c => c.name === formData.partnerTagName) ? formData.partnerTagName : "new"}
+                  >
+                    <option value="new">Create New Tag...</option>
+                    {categories
+                      .filter(c => c.type === 'partner' || (c.slug && ['gla', 'wca-world', 'jc-trans-networks'].includes(c.slug)))
+                      .map(c => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                      ))
+                    }
+                  </select>
+                  
+                  {(!categories.some(c => c.name === formData.partnerTagName) || formData.partnerTagName === "") && (
+                    <Input
+                      id="partnerTagName"
+                      placeholder="Enter partner tag name"
+                      value={formData.partnerTagName}
+                      onChange={(e) => setFormData({ ...formData, partnerTagName: e.target.value })}
+                    />
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Select an existing partner category or create a new one. This will associate the user with the partner dashboard.
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddUserDialogOpen(false)}>

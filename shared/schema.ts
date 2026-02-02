@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   networkId: integer("network_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   lastLogin: timestamp("last_login"),
+  partnerCategoryId: integer("partner_category_id"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -24,6 +25,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   lastName: true,
   role: true,
   networkId: true,
+  partnerCategoryId: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -56,6 +58,7 @@ export const categories = pgTable("categories", {
   networkId: integer("network_id"),
   level: integer("level").default(1),
   order: integer("order_index").default(0),
+  type: text("type").default("content").notNull(), // 'content' | 'partner'
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({
@@ -63,6 +66,7 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
 }).extend({
   name: z.string(),
   slug: z.string(),
+  type: z.enum(["content", "partner"]).optional(),
 });
 
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
@@ -77,6 +81,8 @@ export const articles = pgTable("articles", {
   content: text("content").notNull(),
   imageUrl: text("image_url").notNull(),
   categoryId: integer("category_id").notNull(),
+  partnerCategoryId: integer("partner_category_id"), // Optional secondary category for partner tagging
+  tags: text("tags").array(), // Array of tags
   featured: boolean("featured").default(false),
   status: text("status").notNull().default("published"),
   publishedAt: timestamp("published_at").notNull().defaultNow(),
@@ -244,3 +250,23 @@ export const insertAdvertisementSchema = createInsertSchema(advertisements).omit
 
 export type InsertAdvertisement = z.infer<typeof insertAdvertisementSchema>;
 export type Advertisement = typeof advertisements.$inferSelect;
+
+// Site Statistics table
+export const siteStatistics = pgTable("site_statistics", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(), // e.g. 'monthly_unique_visitors'
+  value: text("value").notNull(),
+  label: text("label").notNull(),
+  changePercentage: integer("change_percentage"), // e.g. 15 for +15%
+  icon: text("icon").notNull(), // Icon name
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: integer("updated_by").references(() => users.id),
+});
+
+export const insertSiteStatisticsSchema = createInsertSchema(siteStatistics).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertSiteStatistics = z.infer<typeof insertSiteStatisticsSchema>;
+export type SiteStatistics = typeof siteStatistics.$inferSelect;

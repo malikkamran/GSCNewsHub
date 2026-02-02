@@ -25,7 +25,6 @@ import NetworkWCAWorld from "@/pages/networks/WCAWorld";
 import NetworkJCTrans from "@/pages/networks/JCTrans";
 
 // Admin pages
-import AdminLogin from "@/pages/admin/Login";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminArticles from "@/pages/admin/Articles";
 import AdminCreateArticle from "@/pages/admin/CreateArticle";
@@ -33,10 +32,14 @@ import AdminEditArticle from "@/pages/admin/EditArticle";
 import AdminCategories from "@/pages/admin/Categories";
 import AdminUsers from "@/pages/admin/Users";
 import AdManagement from "@/pages/admin/AdManagement";
+import AdminSiteStatistics from "@/pages/admin/SiteStatistics";
+import PartnerDashboard from "@/pages/partner/Dashboard";
+import { PartnerProtectedRoute } from "@/lib/partner-protected-route";
 
 function Router() {
   const [location] = useLocation();
   const isAdminRoute = location.startsWith("/admin");
+  const isPartnerRoute = location.startsWith("/partner");
 
   return (
     <Switch>
@@ -59,7 +62,6 @@ function Router() {
       <ProtectedRoute path="/preferences" component={UserPreferencesPage} /> {/* Protected preferences route */}
 
       {/* Admin routes */}
-      <Route path="/admin/login" component={AdminLogin}/>
       <ProtectedRoute path="/admin/dashboard" component={AdminDashboard}/>
       <ProtectedRoute path="/admin/articles" component={AdminArticles}/>
       <ProtectedRoute path="/admin/articles/create" component={AdminCreateArticle}/>
@@ -67,6 +69,10 @@ function Router() {
       <ProtectedRoute path="/admin/categories" component={AdminCategories}/>
       <ProtectedRoute path="/admin/users" component={AdminUsers}/>
       <ProtectedRoute path="/admin/ads" component={AdManagement}/>
+      <ProtectedRoute path="/admin/site-statistics" component={AdminSiteStatistics}/>
+
+      {/* Partner routes */}
+      <PartnerProtectedRoute path="/partner" component={PartnerDashboard} />
 
       <Route component={NotFound} />
     </Switch>
@@ -76,14 +82,15 @@ function Router() {
 function App() {
   const [location] = useLocation();
   const isAdminRoute = location.startsWith("/admin");
+  const isPartnerRoute = location.startsWith("/partner");
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
-          {isAdminRoute ? (
-            // Admin routes don't need the public site header/footer
+          {isAdminRoute || isPartnerRoute ? (
+            // Admin and Partner routes don't need the public site header/footer
             <main>
               <Router />
             </main>

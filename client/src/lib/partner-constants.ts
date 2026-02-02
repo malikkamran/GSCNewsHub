@@ -1,4 +1,4 @@
-import { Article, ArticleStatus, DailyStat, DashboardSummary, Lead, LeadStatus, PlatformStat, DemographicStat } from './types';
+import { Article, ArticleStatus, DashboardSummary, Lead, LeadStatus, PlatformStat, DemographicStat } from './partner-types';
 
 export const SUMMARY_STATS: DashboardSummary = {
   totalViews: 124500,
@@ -29,26 +29,6 @@ export const SENIORITY_LEVELS: DemographicStat[] = [
   { label: 'VP / Director', value: 30, color: 'bg-slate-600' },
   { label: 'Manager', value: 20, color: 'bg-slate-400' },
   { label: 'Individual Contributor', value: 15, color: 'bg-slate-300' }
-];
-
-export const WEBSITE_TRAFFIC_DATA: DailyStat[] = [
-  { date: 'Mon', views: 42000, clicks: 2400, leads: 120 },
-  { date: 'Tue', views: 38000, clicks: 2100, leads: 95 },
-  { date: 'Wed', views: 45000, clicks: 2800, leads: 150 },
-  { date: 'Thu', views: 48000, clicks: 3100, leads: 165 },
-  { date: 'Fri', views: 52000, clicks: 3400, leads: 190 },
-  { date: 'Sat', views: 35000, clicks: 1800, leads: 80 },
-  { date: 'Sun', views: 32000, clicks: 1500, leads: 75 },
-];
-
-export const CHART_DATA: DailyStat[] = [
-  { date: 'Mon', views: 4000, clicks: 240, leads: 12 },
-  { date: 'Tue', views: 3000, clicks: 139, leads: 8 },
-  { date: 'Wed', views: 2000, clicks: 980, leads: 32 },
-  { date: 'Thu', views: 2780, clicks: 390, leads: 15 },
-  { date: 'Fri', views: 1890, clicks: 480, leads: 21 },
-  { date: 'Sat', views: 2390, clicks: 380, leads: 25 },
-  { date: 'Sun', views: 3490, clicks: 430, leads: 30 },
 ];
 
 export const MOCK_ARTICLES: Article[] = [

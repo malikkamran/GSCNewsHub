@@ -10,6 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { User, Category } from "@shared/schema";
 import {
   Form,
   FormControl,
@@ -60,6 +61,8 @@ const articleSchema = z.object({
   content: z.string().min(50, "Content must be at least 50 characters"),
   imageUrl: z.string().url("Must be a valid URL"),
   categoryId: z.coerce.number().min(1, "Please select a category"),
+  partnerCategoryId: z.coerce.number().optional().nullable(),
+  tags: z.string().optional(),
   featured: z.boolean().default(false),
   status: z.enum(["published", "draft"]).default("published"),
 });
@@ -86,10 +89,24 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
   const {
     data: categories = [],
     isLoading: categoriesLoading,
-  } = useQuery({
+  } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
     retry: false,
   });
+
+  // Get all users to filter active partner categories (only works for admin)
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+    retry: false,
+    enabled: user?.role === 'admin'
+  });
+
+  // Calculate active partner category IDs
+  const activePartnerCategoryIds = new Set(
+    users
+      .filter(u => u.role === 'partner' && u.partnerCategoryId)
+      .map(u => u.partnerCategoryId)
+  );
   
   // Get featured articles to check if we already have 3
   const { 
@@ -116,6 +133,8 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
       content: "",
       imageUrl: "",
       categoryId: 0,
+      partnerCategoryId: null,
+      tags: "",
       featured: false,
       status: "published",
     },
@@ -139,6 +158,8 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
             content: article.content,
             imageUrl: article.imageUrl,
             categoryId: article.categoryId,
+            partnerCategoryId: article.partnerCategoryId || null,
+            tags: article.tags ? article.tags.join(", ") : "",
             featured: article.featured,
             status: article.status || "published",
           });
@@ -184,9 +205,16 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
     setIsSubmitting(true);
 
     try {
+      // Process tags string to array
+      const tagsArray = data.tags 
+        ? data.tags.split(',').map(t => t.trim()).filter(Boolean) 
+        : [];
+
       // Add the publisher information to the data
       const dataWithPublisher = {
         ...data,
+        tags: tagsArray,
+        partnerCategoryId: data.partnerCategoryId || null,
         publishedBy: user?.username || "admin"
       };
       
@@ -400,6 +428,68 @@ export default function ArticleForm({ articleId }: ArticleFormProps) {
                               ))}
                             </SelectContent>
                           </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="partnerCategoryId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Partner Category (Optional)</FormLabel>
+                          <Select
+                            onValueChange={(value) => field.onChange(value === "none" ? null : parseInt(value, 10))}
+                            value={field.value ? field.value.toString() : "none"}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a partner category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {categories
+                                .filter((c) => {
+                                  // Only show partner categories that have an active user account
+                                  // For admins, we filter based on users list
+                                  // For non-admins, we might want to show all or none - let's show all for now if users query is disabled
+                                  if (user?.role !== 'admin') return c.type === 'partner';
+                                  
+                                  return (c.type === 'partner' || (c.slug && ['gla', 'wca-world', 'jc-trans-networks'].includes(c.slug))) && 
+                                         activePartnerCategoryIds.has(c.id);
+                                })
+                                .map((category) => (
+                                <SelectItem key={category.id} value={category.id.toString()}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Associates this article with a specific partner dashboard
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="tags"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tags</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g. logistics, sea freight, innovation (comma separated)"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Comma-separated list of tags
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

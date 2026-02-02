@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return data.user;
     },
     onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(['/api/auth/check'], { authenticated: true, user });
+      queryClient.setQueryData(['/api/auth/check'], user);
       toast({
         title: "Login successful",
         description: `Welcome back, ${user.username}!`,
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return data.user;
     },
     onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(['/api/auth/check'], { authenticated: true, user });
+      queryClient.setQueryData(['/api/auth/check'], user);
       toast({
         title: "Registration successful",
         description: "Your account has been created successfully!",
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/auth/logout");
     },
     onSuccess: () => {
-      queryClient.setQueryData(['/api/auth/check'], { authenticated: false, user: null });
+      queryClient.setQueryData(['/api/auth/check'], null);
       toast({
         title: "Logout successful",
         description: "You have been logged out successfully.",

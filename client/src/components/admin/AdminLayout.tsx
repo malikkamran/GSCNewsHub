@@ -1,31 +1,17 @@
 import React, { useState, useEffect, ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import {
-  ArrowLeft,
   LayoutDashboard,
   FileText,
   FolderOpen,
   Users,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  ChevronDown,
-  BarChart3,
   ImageIcon,
+  BarChart,
 } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import Header from "@/components/layout/Header";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -34,7 +20,6 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [location, navigate] = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [username, setUsername] = useState("");
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -46,54 +31,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         const data = await response.json();
         
         if (!data.authenticated) {
-          navigate("/admin/login");
-        } else {
-          setUsername(data.user?.username || "Admin");
+          navigate("/auth");
         }
       } catch (error) {
         console.error("Auth check error:", error);
-        navigate("/admin/login");
+        navigate("/auth");
       }
     };
 
     checkAuth();
   }, [navigate]);
-
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
-        toast({
-          title: "Logged out",
-          description: "You have been successfully logged out.",
-        });
-        
-        navigate("/admin/login");
-      } else {
-        toast({
-          title: "Logout error",
-          description: "An error occurred during logout. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast({
-        title: "Logout error",
-        description: "An error occurred during logout. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   // Toggle mobile menu
   const toggleMenu = () => {
@@ -110,91 +57,30 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="px-4 md:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            {isMobile && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleMenu}
-                className="md:hidden"
-              >
-                {isMenuOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
-              </Button>
-            )}
-            <div className="flex items-center space-x-2">
-              <div className="bg-[#BB1919] text-white font-bold px-3 py-1 rounded text-sm">
-                GSC News
-              </div>
-              <span className="font-medium hidden sm:inline-block">Admin</span>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => window.location.href = "/"}
-              className="ml-4 text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline-block">View Site</span>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => handleNavigate("/admin/dashboard")}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              <LayoutDashboard className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline-block">Dashboard</span>
-            </Button>
-          </div>
+      {/* Main Website Header */}
+      <Header />
 
-          <div className="flex items-center space-x-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                  <span className="hidden sm:inline-block">{username}</span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex-1 flex flex-col md:flex-row">
+      <div className="flex-1 flex flex-col md:flex-row relative">
         {/* Sidebar Navigation */}
         <aside 
           className={`
-            ${isMenuOpen ? "block" : "hidden"} 
-            md:block bg-white border-r border-gray-200 w-full md:w-64 p-4
-            md:sticky md:top-16 md:h-[calc(100vh-4rem)] 
-            fixed inset-0 top-16 z-20 md:z-0 overflow-y-auto
+            ${isMenuOpen ? "translate-x-0" : "-translate-x-full"} 
+            md:translate-x-0 transition-transform duration-300 ease-in-out
+            bg-white border-r border-gray-200 w-64 p-4
+            fixed inset-y-0 left-0 z-20 md:static md:h-[calc(100vh-140px)] 
+            top-[140px] overflow-y-auto
           `}
         >
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
             Content Management
           </h3>
-          <nav className="space-y-2 mb-6">
+          <nav className="space-y-1 mb-6">
             <Link href="/admin/dashboard">
               <Button
                 variant="ghost"
                 size="sm"
                 className={`w-full justify-start ${
-                  location === "/admin/dashboard" ? "bg-gray-100 text-[#BB1919] font-medium" : ""
+                  location === "/admin/dashboard" ? "bg-gray-100 text-[#BB1919] font-medium" : "text-gray-600 hover:text-gray-900"
                 }`}
                 onClick={() => handleNavigate("/admin/dashboard")}
               >
@@ -209,7 +95,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 size="sm"
                 className={`w-full justify-start ${
                   location === "/admin/articles" || location.includes("/admin/articles/") 
-                    ? "bg-gray-100 text-[#BB1919] font-medium" : ""
+                    ? "bg-gray-100 text-[#BB1919] font-medium" : "text-gray-600 hover:text-gray-900"
                 }`}
                 onClick={() => handleNavigate("/admin/articles")}
               >
@@ -223,7 +109,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 variant="ghost"
                 size="sm"
                 className={`w-full justify-start ${
-                  location === "/admin/categories" ? "bg-gray-100 text-[#BB1919] font-medium" : ""
+                  location === "/admin/categories" ? "bg-gray-100 text-[#BB1919] font-medium" : "text-gray-600 hover:text-gray-900"
                 }`}
                 onClick={() => handleNavigate("/admin/categories")}
               >
@@ -231,18 +117,32 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 Manage Categories
               </Button>
             </Link>
+
+            <Link href="/admin/site-statistics">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`w-full justify-start ${
+                  location === "/admin/site-statistics" ? "bg-gray-100 text-[#BB1919] font-medium" : "text-gray-600 hover:text-gray-900"
+                }`}
+                onClick={() => handleNavigate("/admin/site-statistics")}
+              >
+                <BarChart className="h-4 w-4 mr-2" />
+                Site Statistics
+              </Button>
+            </Link>
           </nav>
           
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
             User Management
           </h3>
-          <nav className="space-y-2 mb-6">
+          <nav className="space-y-1 mb-6">
             <Link href="/admin/users">
               <Button
                 variant="ghost"
                 size="sm"
                 className={`w-full justify-start ${
-                  location === "/admin/users" ? "bg-gray-100 text-[#BB1919] font-medium" : ""
+                  location === "/admin/users" ? "bg-gray-100 text-[#BB1919] font-medium" : "text-gray-600 hover:text-gray-900"
                 }`}
                 onClick={() => handleNavigate("/admin/users")}
               >
@@ -255,13 +155,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
             Advertising
           </h3>
-          <nav className="space-y-2">
+          <nav className="space-y-1">
             <Link href="/admin/ads">
               <Button
                 variant="ghost"
                 size="sm"
                 className={`w-full justify-start ${
-                  location === "/admin/ads" ? "bg-gray-100 text-[#BB1919] font-medium" : ""
+                  location === "/admin/ads" ? "bg-gray-100 text-[#BB1919] font-medium" : "text-gray-600 hover:text-gray-900"
                 }`}
                 onClick={() => handleNavigate("/admin/ads")}
               >
@@ -272,9 +172,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </nav>
         </aside>
 
+        {/* Overlay for mobile */}
+        {isMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-10 md:hidden"
+            onClick={() => setIsMenuOpen(false)}
+          />
+        )}
+
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-6">
-          {children}
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto h-[calc(100vh-140px)]">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

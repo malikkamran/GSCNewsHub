@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
+import { getRedirectPath } from "@/lib/auth-utils";
 
 // Login form schema
 const loginSchema = z.object({
@@ -34,12 +35,8 @@ function LoginForm() {
   function onSubmit(values: LoginValues) {
     loginMutation.mutate(values, {
       onSuccess: (user) => {
-        // Programmatic navigation after successful login
-        if (user.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/');
-        }
+        const redirectPath = getRedirectPath(user);
+        window.location.href = redirectPath;
       }
     });
   }
@@ -99,13 +96,7 @@ export default function AuthPage() {
   // Redirect if user is already logged in (user came to this page directly)
   useEffect(() => {
     if (user && !isLoading) {
-      // If the user is an admin, redirect to admin dashboard
-      if (user.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        // Otherwise redirect to homepage
-        navigate('/');
-      }
+      navigate(getRedirectPath(user));
     }
   }, [user, isLoading, navigate]);
   

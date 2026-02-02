@@ -13,7 +13,8 @@ import {
   insertAdPlacementSchema,
   insertAdvertisementSchema,
   insertNetworkSchema,
-  insertContentSchema
+  insertContentSchema,
+  insertSiteStatisticsSchema
 } from "@shared/schema";
 
 // Authentication state
@@ -37,6 +38,19 @@ const requireNetworkAdmin = (req: Request, res: Response, next: NextFunction) =>
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Site Statistics endpoints - Moved to top to avoid shadowing
+  app.get('/api/site-statistics', async (req, res) => {
+    try {
+      console.log("GET /api/site-statistics called");
+      const stats = await storage.getSiteStatistics();
+      console.log(`GET /api/site-statistics returning ${stats.length} stats`);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error in GET /api/site-statistics:", error);
+      res.status(500).json({ message: 'Failed to fetch site statistics' });
+    }
+  });
+
   // Authentication routes
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
@@ -546,6 +560,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/articles/partner/:partnerCategoryId', isAuthenticated, async (req, res) => {
+    try {
+      const partnerCategoryId = parseInt(req.params.partnerCategoryId);
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+      
+      const articles = await storage.getArticlesByPartnerCategory(partnerCategoryId, limit, offset);
+      
+      // Return even drafts if it's the partner viewing their own?
+      // For now, let's return all statuses so they can see drafts/scheduled.
+      
+      res.json(articles);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch partner articles' });
+    }
+  });
+
   // Get article by slug (for public view)
   app.get('/api/articles/slug/:slug', async (req, res) => {
     try {
@@ -859,7 +890,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ success: false, message: "Forbidden: Admin access required" });
       }
       
-      const userData = insertUserSchema.parse(req.body);
+      // Extend schema to include optional partnerTagName
+      const createUserSchema = insertUserSchema.extend({
+        partnerTagName: z.string().optional()
+      });
+      
+      const userData = createUserSchema.parse(req.body);
       
       // Check if username already exists
       const existingUsername = await storage.getUserByUsername(userData.username);
@@ -874,9 +910,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ success: false, message: "Email already registered" });
         }
       }
+
+      // Handle partner tag creation if role is partner
+      if (userData.role === 'partner' && userData.partnerTagName) {
+        // Create slug from tag name
+        const slug = userData.partnerTagName
+          .toLowerCase()
+          .trim()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/[\s_-]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+
+        // Check if category already exists
+        const existingCategory = await storage.getCategoryBySlug(slug);
+        
+        let partnerCategoryId;
+        if (existingCategory) {
+          // If it exists, check if it's a partner category
+          if (existingCategory.type === 'partner') {
+            partnerCategoryId = existingCategory.id;
+          } else {
+            // Slug taken by content category
+             return res.status(400).json({ success: false, message: "Partner tag name already exists as a content category" });
+          }
+        } else {
+          // Create new partner category
+          const newCategory = await storage.createCategory({
+            name: userData.partnerTagName,
+            slug,
+            type: 'partner',
+            parentId: null,
+            networkId: null,
+            level: 1,
+            order: 0
+          });
+          partnerCategoryId = newCategory.id;
+        }
+        
+        // Assign the partner category ID to the user
+        userData.partnerCategoryId = partnerCategoryId;
+      }
+
+      // Remove partnerTagName from userData as it's not part of the user schema
+      const { partnerTagName, ...cleanUserData } = userData;
       
       // Create new user with role
-      const newUser = await storage.createUser(userData);
+      const newUser = await storage.createUser(cleanUserData);
       
       // Return the new user without password
       const { password: _, ...userWithoutPassword } = newUser;
@@ -935,6 +1014,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({ success: true });
     } catch (error) {
       return res.status(500).json({ success: false, message: "Failed to delete user" });
+    }
+  });
+
+
+  // Site Statistics endpoints
+  
+  app.post('/api/site-statistics', isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const data = insertSiteStatisticsSchema.parse(req.body);
+      const stat = await storage.createSiteStatistic(data);
+      res.status(201).json(stat);
+    } catch (error) {
+      if (error instanceof z.ZodError) return res.status(400).json({ message: 'Invalid statistics data', errors: error.errors });
+      res.status(500).json({ message: 'Failed to create site statistic' });
+    }
+  });
+
+  app.put('/api/site-statistics/:key', isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const { key } = req.params;
+      const data = insertSiteStatisticsSchema.partial().parse(req.body);
+      const updated = await storage.updateSiteStatistic(key, data);
+      if (!updated) return res.status(404).json({ message: 'Statistic not found' });
+      res.json(updated);
+    } catch (error) {
+      if (error instanceof z.ZodError) return res.status(400).json({ message: 'Invalid statistics data', errors: error.errors });
+      res.status(500).json({ message: 'Failed to update site statistic' });
     }
   });
 
